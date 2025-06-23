@@ -87,8 +87,8 @@ class JobInfoRepositoryImpl(
         return list.map { it.toDomainModel() }
     }
 
-    override fun clearSchedulerAddress(schedulerAddress: String) {
-        jobInfoJpaRepository.clearSchedulerAddress(schedulerAddress)
+    override fun clearSchedulerByAddress(schedulerAddress: String) {
+        jobInfoJpaRepository.clearSchedulerByAddress(schedulerAddress)
     }
 
     override fun save(jobInfo: JobInfo): JobId {
@@ -111,7 +111,9 @@ class JobInfoRepositoryImpl(
 
     override fun listAssignableIds(pageQuery: PageQuery): Page<JobId> {
         val pageable = PageRequest.of(
-            pageQuery.pageNo - 1, pageQuery.pageSize, Sort.by(JobInfoEntity::id.name).descending()
+            pageQuery.pageNo - 1,
+            pageQuery.pageSize,
+            Sort.by(JobInfoEntity::id.name).descending()
         )
         val specification = Specification<JobInfoEntity> { root, _, criteriaBuilder ->
             val notAssigned = criteriaBuilder.isNull(root.get<Boolean>(JobInfoEntity::schedulerAddress.name))

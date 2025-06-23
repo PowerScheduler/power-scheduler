@@ -10,10 +10,7 @@ import akka.management.cluster.bootstrap.ClusterBootstrap
 import akka.management.javadsl.AkkaManagement
 import com.typesafe.config.ConfigFactory
 import org.springframework.context.ApplicationContext
-import tech.powerscheduler.server.application.actor.singleton.JobAssignorActor
-import tech.powerscheduler.server.application.actor.singleton.JobInstanceCleanActor
-import tech.powerscheduler.server.application.actor.singleton.TaskStatusChangeEventHandlerActor
-import tech.powerscheduler.server.application.actor.singleton.WorkerRegistryCleanActor
+import tech.powerscheduler.server.application.actor.singleton.*
 import java.util.concurrent.TimeUnit
 
 class AppGuardian(
@@ -80,31 +77,75 @@ class AppGuardian(
             val singleton = ClusterSingleton.get(actorSystem)
 
             SingletonActor.of(
+                TaskStatusChangeEventHandlerActor.create(applicationContext = applicationContext),
+                TaskStatusChangeEventHandlerActor::class.simpleName,
+            )
+                .withProps(Props.empty().withDispatcherFromConfig("task-status-change-event-handler-dispatcher"))
+                .let { singleton.init(it) }
+
+            SingletonActor.of(
+                WorkflowNodeInstanceStatusChangeEventHandlerActor.create(applicationContext = applicationContext),
+                WorkflowNodeInstanceStatusChangeEventHandlerActor::class.simpleName,
+            )
+                .withProps(Props.empty().withDispatcherFromConfig("workflow-node-instance-status-change-event-handler-dispatcher"))
+                .let { singleton.init(it) }
+
+            SingletonActor.of(
                 JobInstanceCleanActor.create(applicationContext = applicationContext),
                 JobInstanceCleanActor::class.simpleName,
             )
                 .withProps(Props.empty().withDispatcherFromConfig("job-instance-clean-dispatcher"))
                 .let { singleton.init(it) }
 
-            SingletonActor.of(
+            val jobAssignorActorRef = SingletonActor.of(
                 JobAssignorActor.create(applicationContext = applicationContext),
                 JobAssignorActor::class.simpleName,
-            ).let { singleton.init(it) }
+            )
+                .withProps(Props.empty().withDispatcherFromConfig("job-assignor-dispatcher"))
+                .let { singleton.init(it) }
+
+            val workflowAssignorActorRef = SingletonActor.of(
+                WorkflowAssignorActor.create(applicationContext = applicationContext),
+                WorkflowAssignorActor::class.simpleName,
+            )
+                .withProps(Props.empty().withDispatcherFromConfig("workflow-assignor-dispatcher"))
+                .let { singleton.init(it) }
 
             SingletonActor.of(
-                TaskStatusChangeEventHandlerActor.create(applicationContext = applicationContext),
-                TaskStatusChangeEventHandlerActor::class.simpleName,
-            ).let { singleton.init(it) }
+                SchedulerManagerActor.create(
+                    applicationContext = applicationContext,
+                    jobAssignorActorRef = jobAssignorActorRef,
+                    workflowAssignorActorRef = workflowAssignorActorRef,
+                ),
+                SchedulerManagerActor::class.simpleName,
+            )
+                .withProps(Props.empty().withDispatcherFromConfig("scheduler-manager-dispatcher"))
+                .let { singleton.init(it) }
+
+            context.spawn(
+                SchedulerRegisterActor.create(applicationContext),
+                SchedulerRegisterActor::class.simpleName,
+                Props.empty().withDispatcherFromConfig("scheduler-register-dispatcher")
+            )
 
             context.spawn(
                 WorkerRegistryCleanActor.create(applicationContext),
                 WorkerRegistryCleanActor::class.simpleName,
+                Props.empty().withDispatcherFromConfig("worker-registry-clean-dispatcher")
             )
+
+            context.spawn(
+                WorkflowSchedulerActor.create(applicationContext),
+                WorkflowSchedulerActor::class.simpleName,
+                Props.empty().withDispatcherFromConfig("workflow-scheduler-dispatcher")
+            )
+
             context.spawn(
                 JobSchedulerActor.create(applicationContext),
                 JobSchedulerActor::class.simpleName,
                 Props.empty().withDispatcherFromConfig("job-scheduler-dispatcher")
             )
+
             context.spawn(
                 TaskDispatcherActor.create(applicationContext),
                 TaskDispatcherActor::class.simpleName,

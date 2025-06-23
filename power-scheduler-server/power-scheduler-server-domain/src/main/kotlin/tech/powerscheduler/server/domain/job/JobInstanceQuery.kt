@@ -1,5 +1,6 @@
 package tech.powerscheduler.server.domain.job
 
+import tech.powerscheduler.common.enums.JobSourceTypeEnum
 import tech.powerscheduler.common.enums.JobStatusEnum
 import tech.powerscheduler.server.domain.common.PageQuery
 import java.time.LocalDateTime
@@ -22,9 +23,14 @@ class JobInstanceQuery : PageQuery() {
     var appCode: String? = null
 
     /**
-     * 任务id
+     * 任务来源对象id
      */
-    var jobId: Long? = null
+    var sourceId: Long? = null
+
+    /**
+     * 任务类型对象类型
+     */
+    var sourceType: JobSourceTypeEnum? = null
 
     /**
      * 任务实例id

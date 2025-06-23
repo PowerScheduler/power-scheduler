@@ -12,7 +12,7 @@ import java.time.LocalDateTime
 @Table(
     name = "job_instance",
     indexes = [
-        Index(name = "job_instance_idx_job_id", columnList = "job_id"),
+        Index(name = "job_instance_idx_source_id", columnList = "source_id"),
         Index(name = "job_instance_idx_start_at", columnList = "start_at"),
         Index(name = "job_instance_idx_end_at", columnList = "end_at"),
     ]
@@ -29,10 +29,29 @@ class JobInstanceEntity() : BaseEntity() {
     var id: Long? = null
 
     /**
-     * 任务id
+     * 任务来源对象的id
      */
-    @Column(name = "job_id", nullable = false, updatable = false)
-    var jobId: Long? = null
+    @Column(name = "source_id", nullable = false, updatable = false)
+    var sourceId: Long? = null
+
+    /**
+     * 任务来源
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "source_type", nullable = false, updatable = false)
+    var sourceType: JobSourceTypeEnum? = null
+
+    /**
+     * 工作流实例编码
+     */
+    @Column(name = "workflow_instance_code", updatable = false)
+    var workflowInstanceCode: String? = null
+
+    /**
+     * 工作流节点实例编码
+     */
+    @Column(name = "workflow_node_instance_code", updatable = false)
+    var workflowNodeInstanceCode: String? = null
 
     /**
      * worker地址(指定机器运行时使用)

@@ -23,7 +23,7 @@ interface JobInfoRepository {
 
     fun findAllByIds(ids: Iterable<JobId>): List<JobInfo>
 
-    fun clearSchedulerAddress(schedulerAddress: String)
+    fun clearSchedulerByAddress(schedulerAddress: String)
 
     fun save(jobInfo: JobInfo): JobId
 

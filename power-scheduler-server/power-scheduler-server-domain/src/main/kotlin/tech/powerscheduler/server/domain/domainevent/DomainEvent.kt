@@ -47,4 +47,22 @@ class DomainEvent {
         this.eventStatus = DomainEventStatusEnum.PENDING
         this.retryCnt = this.retryCnt!! + 1
     }
+
+    companion object {
+        fun create(
+            aggregateId: String,
+            aggregateType: AggregateTypeEnum,
+            eventType: DomainEventTypeEnum,
+            body: String?,
+        ): DomainEvent {
+            return DomainEvent().apply {
+                this.eventStatus = DomainEventStatusEnum.PENDING
+                this.aggregateId = aggregateId
+                this.aggregateType = aggregateType
+                this.eventType = eventType
+                this.body = body
+                this.retryCnt = 0
+            }
+        }
+    }
 }

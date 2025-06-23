@@ -27,19 +27,19 @@ fun <T, S> AbstractBehavior<T>.subscribeService(serviceKey: ServiceKey<S>, adapt
 
 fun ActorSystem<*>.hostPort(): String {
     val address = Cluster.get(this).selfMember().address()
-    return getHostPort(address)!!
+    return getHostPort(address)
 }
 
-fun ActorRef<*>.hostPort(): String? {
+fun ActorRef<*>.hostPort(): String {
     val address = this.path().address()
     return getHostPort(address)
 }
 
-private fun getHostPort(address: Address): String? {
+private fun getHostPort(address: Address): String {
     val host = address.host.getOrNull()
     val port = address.port.getOrNull()
     if (host.isNullOrBlank() || port == null) {
-        return null
+        return ""
     }
     return "$host:$port"
 }

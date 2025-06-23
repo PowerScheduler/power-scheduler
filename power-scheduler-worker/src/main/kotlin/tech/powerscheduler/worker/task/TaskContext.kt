@@ -11,11 +11,6 @@ import java.time.LocalDateTime
  */
 open class TaskContext {
     /**
-     * 任务id
-     */
-    var jobId: Long? = null
-
-    /**
      * 任务实例id
      */
     var jobInstanceId: Long? = null

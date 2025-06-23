@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import tech.powerscheduler.server.application.actor.AppGuardian
+import tech.powerscheduler.server.application.actor.ServerAddressHolder
 import tech.powerscheduler.server.application.utils.JSON
 
 @Profile("!IT")
@@ -31,6 +32,14 @@ class AkkaConfiguration() {
             akkaRemotePort = akkaProperties.remotePort!!,
             applicationContext = applicationContext
         )
+    }
+
+    @Bean
+    fun server(properties: PowerSchedulerServerProperties): ServerAddressHolder {
+        val address = properties.akka!!.let {
+            "${it.host}:${it.remotePort}"
+        }
+        return ServerAddressHolder(address)
     }
 
 }

@@ -7,4 +7,8 @@ package tech.powerscheduler.server.domain.job
  * @since 2025/4/18
  */
 @JvmInline
-value class JobId(val value: Long)
+value class JobId(val value: Long){
+    fun toSourceId(): SourceId {
+        return SourceId(value)
+    }
+}

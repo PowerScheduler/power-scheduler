@@ -11,11 +11,6 @@ import java.time.LocalDateTime
  */
 class JobDispatchRequestDTO {
     /**
-     * 任务id
-     */
-    var jobId: Long? = null
-
-    /**
      * 任务实例id
      */
     var jobInstanceId: Long? = null

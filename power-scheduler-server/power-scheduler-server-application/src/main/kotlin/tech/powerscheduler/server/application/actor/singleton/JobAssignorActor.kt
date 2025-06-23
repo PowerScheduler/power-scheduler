@@ -1,20 +1,19 @@
 package tech.powerscheduler.server.application.actor.singleton
 
-import akka.actor.typed.ActorRef
 import akka.actor.typed.Behavior
 import akka.actor.typed.SupervisorStrategy
 import akka.actor.typed.javadsl.AbstractBehavior
 import akka.actor.typed.javadsl.ActorContext
 import akka.actor.typed.javadsl.Behaviors
 import akka.actor.typed.javadsl.Receive
+import org.slf4j.LoggerFactory
 import org.springframework.context.ApplicationContext
 import org.springframework.transaction.support.TransactionTemplate
-import tech.powerscheduler.server.application.actor.JobSchedulerActor
-import tech.powerscheduler.server.application.utils.hostPort
-import tech.powerscheduler.server.application.utils.subscribeService
 import tech.powerscheduler.server.domain.common.PageQuery
 import tech.powerscheduler.server.domain.job.JobId
 import tech.powerscheduler.server.domain.job.JobInfoRepository
+import tech.powerscheduler.server.domain.scheduler.Scheduler
+import tech.powerscheduler.server.domain.scheduler.SchedulerRepository
 import java.time.Duration
 
 /**
@@ -23,30 +22,25 @@ import java.time.Duration
  */
 class JobAssignorActor(
     context: ActorContext<Command>,
-    val jobInfoRepository: JobInfoRepository,
-    val transactionTemplate: TransactionTemplate,
+    private val jobInfoRepository: JobInfoRepository,
+    private val schedulerRepository: SchedulerRepository,
+    private val transactionTemplate: TransactionTemplate,
 ) : AbstractBehavior<JobAssignorActor.Command>(context) {
 
-    sealed interface Command {
-        class UpdateScheduler(
-            val schedulers: Set<ActorRef<JobSchedulerActor.Command>>
-        ) : Command
+    private val log = LoggerFactory.getLogger(javaClass)
 
+    sealed interface Command {
         object Assign : Command
 
-        object ReassignFailRetry : Command
-
-        object ReassignAllJob : Command
+        object ReassignAll : Command
     }
-
-    private val schedulerRegistry = mutableListOf<ActorRef<JobSchedulerActor.Command>>()
-    private val assignFailedJobIds = mutableSetOf<JobId>()
 
     companion object {
         fun create(
             applicationContext: ApplicationContext,
         ): Behavior<Command> {
             val jobInfoRepository = applicationContext.getBean(JobInfoRepository::class.java)
+            val schedulerRepository = applicationContext.getBean(SchedulerRepository::class.java)
             val transactionTemplate = applicationContext.getBean(TransactionTemplate::class.java)
             return Behaviors.setup { context ->
                 Behaviors.withTimers { timer ->
@@ -54,21 +48,11 @@ class JobAssignorActor(
                         context = context,
                         jobInfoRepository = jobInfoRepository,
                         transactionTemplate = transactionTemplate,
+                        schedulerRepository = schedulerRepository,
                     )
-                    actor.apply {
-                        subscribeService(JobSchedulerActor.SERVICE_KEY) {
-                            Command.UpdateScheduler(it)
-                        }
-                    }
                     timer.startTimerWithFixedDelay(
                         Command.Assign,
                         Command.Assign,
-                        Duration.ofSeconds(3),
-                        Duration.ofSeconds(3),
-                    )
-                    timer.startTimerWithFixedDelay(
-                        Command.ReassignFailRetry,
-                        Command.ReassignFailRetry,
                         Duration.ofSeconds(3),
                         Duration.ofSeconds(3),
                     )
@@ -82,23 +66,15 @@ class JobAssignorActor(
 
     override fun createReceive(): Receive<Command> {
         return newReceiveBuilder()
-            .onMessage(Command.UpdateScheduler::class.java, this::handleUpdateSchedulers)
             .onMessageEquals(Command.Assign, this::handleAssign)
-            .onMessageEquals(Command.ReassignFailRetry, this::handleReassignFailRetry)
-            .onMessageEquals(Command.ReassignAllJob, this::handleReassignAllJob)
+            .onMessageEquals(Command.ReassignAll, this::handleReassignAll)
             .build()
     }
 
-    private fun handleUpdateSchedulers(command: Command.UpdateScheduler): Behavior<Command> {
-        schedulerRegistry.clear()
-        schedulerRegistry.addAll(command.schedulers)
-        context.self.tell(Command.ReassignAllJob)
-        return this
-    }
-
     private fun handleAssign(): Behavior<Command> {
-        if (schedulerRegistry.isEmpty()) {
-            context.log.error("handleAssign failed, schedulerRegistry is empty")
+        val availableSchedulers = schedulerRepository.findAll().filter { it.expired.not() }
+        if (availableSchedulers.isEmpty()) {
+            log.error("handleAssign failed, no available schedulers")
             return this
         }
         var pageNo = 1
@@ -106,23 +82,15 @@ class JobAssignorActor(
             val query = PageQuery(pageNo = pageNo++, pageSize = 200)
             val page = jobInfoRepository.listAssignableIds(query)
             val jobIds = page.content
-            reassignJob(jobIds)
+            reassign(jobIds, availableSchedulers)
         } while (page.isNotEmpty())
         return this
     }
 
-    private fun handleReassignFailRetry(): Behavior<Command> {
-        if (schedulerRegistry.isEmpty()) {
-            context.log.error("handleReassignFailRetry failed, schedulerRegistry is empty")
-            return this
-        }
-        reassignJob(assignFailedJobIds.toList())
-        return this
-    }
-
-    private fun handleReassignAllJob(): Behavior<Command> {
-        if (schedulerRegistry.isEmpty()) {
-            context.log.error("handleReassignAllJob failed, schedulerRegistry is empty")
+    private fun handleReassignAll(): Behavior<Command> {
+        val availableSchedulers = schedulerRepository.findAll().filter { it.expired.not() }
+        if (availableSchedulers.isEmpty()) {
+            log.error("handleReassignAllJob failed, no available schedulers")
             return this
         }
         var pageNo = 1
@@ -130,12 +98,12 @@ class JobAssignorActor(
             val query = PageQuery(pageNo = pageNo++, pageSize = 1000)
             val page = jobInfoRepository.listAllIds(query)
             val jobIds = page.content
-            reassignJob(jobIds)
+            reassign(jobIds, availableSchedulers)
         } while (page.isNotEmpty())
         return this
     }
 
-    private fun reassignJob(jobIds: List<JobId>) {
+    private fun reassign(jobIds: List<JobId>, availableSchedulers: List<Scheduler>) {
         if (jobIds.isEmpty()) {
             return
         }
@@ -146,17 +114,14 @@ class JobAssignorActor(
                     if (jobInfo == null) {
                         return@executeWithoutResult
                     }
-                    val schedulerIdx = jobIds.size % schedulerRegistry.size
-                    val assignedScheduler = schedulerRegistry[schedulerIdx]
-                    // 如果是本地actor, 则无法从ActorRef中获取ip和端口, 需要使用ActorSystem获取
-                    jobInfo.schedulerAddress = assignedScheduler.hostPort() ?: context.system.hostPort()
+                    val schedulerIdx = jobIds.size % availableSchedulers.size
+                    val assignedScheduler = availableSchedulers[schedulerIdx]
+                    jobInfo.schedulerAddress = assignedScheduler.address
                     jobInfoRepository.save(jobInfo)
-                    context.log.info("assign job [{}] to server [{}]", jobInfo.id!!.value, jobInfo.schedulerAddress)
+                    log.info("assign job [{}] to server [{}]", jobInfo.id!!.value, jobInfo.schedulerAddress)
                 }
-                assignFailedJobIds.remove(jobId)
             } catch (e: Exception) {
-                context.log.error("Failed to reassign job [{}]: {}", jobId.value, e.message, e)
-                assignFailedJobIds.add(jobId)
+                log.error("Failed to reassign job [{}]: {}", jobId.value, e.message, e)
             }
         }
     }

@@ -5,12 +5,13 @@ import org.springframework.data.domain.Sort
 import org.springframework.data.jpa.domain.Specification
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Repository
+import tech.powerscheduler.common.enums.JobSourceTypeEnum
 import tech.powerscheduler.common.enums.JobStatusEnum
 import tech.powerscheduler.common.enums.TaskTypeEnum
 import tech.powerscheduler.server.domain.common.Page
 import tech.powerscheduler.server.domain.common.PageQuery
-import tech.powerscheduler.server.domain.job.JobId
 import tech.powerscheduler.server.domain.job.JobInstanceId
+import tech.powerscheduler.server.domain.job.SourceId
 import tech.powerscheduler.server.domain.task.Task
 import tech.powerscheduler.server.domain.task.TaskId
 import tech.powerscheduler.server.domain.task.TaskRepository
@@ -77,7 +78,8 @@ class TaskRepositoryRepositoryImpl(
     }
 
     override fun listDispatchable(
-        jobIds: Iterable<JobId>,
+        sourceIds: Iterable<SourceId>,
+        sourceType: JobSourceTypeEnum,
         pageQuery: PageQuery
     ): Page<Task> {
         val pageable = PageRequest.of(
@@ -86,7 +88,8 @@ class TaskRepositoryRepositoryImpl(
             Sort.by(JobInstanceEntity::scheduleAt.name).ascending()
         )
         val page = taskRepositoryJpaRepository.listDispatchable(
-            jobIds = jobIds.map { it.value },
+            sourceIds = sourceIds.map { it.value },
+            sourceType = sourceType,
             jobStatuses = listOf(JobStatusEnum.WAITING_DISPATCH),
             pageRequest = pageable,
         )

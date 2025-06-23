@@ -1,7 +1,7 @@
 package tech.powerscheduler.server.application.dto.request
 
 import jakarta.validation.constraints.NotBlank
-import org.jetbrains.annotations.NotNull
+import jakarta.validation.constraints.NotNull
 import java.time.LocalDateTime
 
 /**

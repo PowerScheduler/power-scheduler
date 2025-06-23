@@ -7,8 +7,8 @@ import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor
 import org.springframework.data.jpa.repository.Lock
 import org.springframework.data.jpa.repository.Query
-import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
+import tech.powerscheduler.common.enums.JobSourceTypeEnum
 import tech.powerscheduler.common.enums.JobStatusEnum
 import tech.powerscheduler.server.infrastructure.persistence.model.JobInstanceEntity
 import java.time.LocalDateTime
@@ -44,17 +44,19 @@ interface JobInstanceJpaRepository :
 
     @Query(
         """
-        SELECT j.jobId, COUNT(j) 
+        SELECT j.sourceId, COUNT(j) 
         FROM JobInstanceEntity j 
         WHERE true 
-          AND j.jobId IN :jobIds 
+          AND j.sourceType = :sourceType
+          AND j.sourceId IN :sourceIds 
           AND j.jobStatus IN :jobStatuses 
-        GROUP BY j.jobId
+        GROUP BY j.sourceId
     """
     )
-    fun countGroupByJobIdAndJobStatus(
-        @Param("jobIds") jobIds: Iterable<Long>,
-        @Param("jobStatuses") jobStatuses: Iterable<JobStatusEnum>
+    fun countGroupBySourceIdAndJobStatus(
+        sourceIds: Iterable<Long>,
+        sourceType: JobSourceTypeEnum,
+        jobStatuses: Iterable<JobStatusEnum>
     ): List<Array<Any>>
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
@@ -67,12 +69,12 @@ interface JobInstanceJpaRepository :
             jobInstance.id
         FROM JobInstanceEntity AS jobInstance
         WHERE true 
-          AND jobInstance.jobId = :jobId 
+          AND jobInstance.sourceId = :sourceId 
           AND jobInstance.jobStatus IN :jobStatuses
     """
     )
-    fun listIdByJobIdAndJobStatus(
-        jobId: Long,
+    fun listIdBySourceIdAndJobStatus(
+        sourceId: Long,
         jobStatuses: Iterable<JobStatusEnum>,
         pageable: Pageable
     ): Page<Long>
@@ -83,13 +85,15 @@ interface JobInstanceJpaRepository :
             jobInstance.id
         FROM JobInstanceEntity AS jobInstance
         WHERE true 
-          AND jobInstance.jobId = :jobId 
+          AND jobInstance.sourceId = :sourceId 
+          AND jobInstance.sourceType = :sourceType
           AND jobInstance.jobStatus IN :jobStatuses
           AND jobInstance.endAt < :endAt
     """
     )
-    fun listIdByJobIdAndJobStatusAndEndAtBefore(
-        jobId: Long,
+    fun listIdBySourceIdAndJobStatusAndEndAtBefore(
+        sourceId: Long,
+        sourceType: JobSourceTypeEnum,
         jobStatuses: Set<JobStatusEnum>,
         endAt: LocalDateTime,
         pageable: Pageable
@@ -101,14 +105,16 @@ interface JobInstanceJpaRepository :
             jobInstance.id
         FROM JobInstanceEntity AS jobInstance
         WHERE true 
-          AND jobInstance.jobId IN :jobIds
+          AND jobInstance.sourceId IN :sourceIds
+          AND jobInstance.sourceType = :sourceType
           AND jobInstance.jobStatus IN :jobStatuses
     """
     )
     fun listDispatchable(
-        jobIds: Iterable<Long>,
+        sourceIds: Iterable<Long>,
+        sourceType: JobSourceTypeEnum,
         jobStatuses: Iterable<JobStatusEnum>,
-        pageRequest: Pageable
+        pageRequest: Pageable,
     ): Page<Long>
 
 }

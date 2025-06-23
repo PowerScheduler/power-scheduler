@@ -78,7 +78,7 @@ class JobInstanceCleanActor(
             val jobInfos = jobInfoRepository.findAllByIds(jobIds)
             cleanJobInstance(jobInfos)
         } while (page.isNotEmpty())
-        context.log.info("clean jobJobInstance successfully")
+        log.info("clean jobJobInstance successfully")
         return this
     }
 

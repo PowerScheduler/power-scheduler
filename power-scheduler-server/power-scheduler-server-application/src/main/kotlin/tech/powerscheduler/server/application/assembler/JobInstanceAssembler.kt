@@ -1,6 +1,7 @@
 package tech.powerscheduler.server.application.assembler
 
 import org.springframework.stereotype.Component
+import tech.powerscheduler.common.enums.JobSourceTypeEnum
 import tech.powerscheduler.server.application.dto.request.JobInstanceQueryRequestDTO
 import tech.powerscheduler.server.application.dto.response.JobInstanceDetailResponseDTO
 import tech.powerscheduler.server.application.dto.response.JobInstanceQueryResponseDTO
@@ -21,7 +22,8 @@ class JobInstanceAssembler {
             this.pageSize = param.pageSize
             this.namespaceCode = param.namespaceCode
             this.appCode = param.appCode
-            this.jobId = param.jobId
+            this.sourceId = param.jobId
+            this.sourceType = JobSourceTypeEnum.JOB
             this.jobInstanceId = param.jobInstanceId
             this.jobName = param.jobName
             this.jobStatus = param.jobStatus
@@ -30,59 +32,59 @@ class JobInstanceAssembler {
         }
     }
 
-    fun toJobInstanceQueryResponseDTO(domainModel: JobInstance): JobInstanceQueryResponseDTO {
+    fun toJobInstanceQueryResponseDTO(jobInstance: JobInstance): JobInstanceQueryResponseDTO {
         return JobInstanceQueryResponseDTO().apply {
-            this.id = domainModel.id!!.value
-            this.jobId = domainModel.jobId?.value
-            this.appCode = domainModel.appGroup?.code
-            this.appName = domainModel.appGroup?.name
-            this.jobName = domainModel.jobName
-            this.jobType = domainModel.jobType.toDTO()
-            this.processor = domainModel.processor
-            this.jobStatus = domainModel.jobStatus.toDTO()
-            this.scheduleAt = domainModel.scheduleAt
-            this.startAt = domainModel.startAt
-            this.endAt = domainModel.endAt
-            this.executeParams = domainModel.executeParams
-            this.executeMode = domainModel.executeMode.toDTO()
-            this.scheduleType = domainModel.scheduleType.toDTO()
-            this.message = domainModel.message
-            this.dataTime = domainModel.dataTime
-            this.scriptType = domainModel.scriptType.toDTO()
-            this.scriptCode = domainModel.scriptCode
-            this.attemptCnt = domainModel.attemptCnt
-            this.priority = domainModel.priority
-            this.createdBy = domainModel.createdBy
-            this.createdAt = domainModel.createdAt
-            this.updatedBy = domainModel.updatedBy
-            this.updatedAt = domainModel.updatedAt
+            this.id = jobInstance.id!!.value
+            this.jobId = jobInstance.sourceId?.value
+            this.appCode = jobInstance.appGroup?.code
+            this.appName = jobInstance.appGroup?.name
+            this.jobName = jobInstance.jobName
+            this.jobType = jobInstance.jobType.toDTO()
+            this.processor = jobInstance.processor
+            this.jobStatus = jobInstance.jobStatus.toDTO()
+            this.scheduleAt = jobInstance.scheduleAt
+            this.startAt = jobInstance.startAt
+            this.endAt = jobInstance.endAt
+            this.executeParams = jobInstance.executeParams
+            this.executeMode = jobInstance.executeMode.toDTO()
+            this.scheduleType = jobInstance.scheduleType.toDTO()
+            this.message = jobInstance.message
+            this.dataTime = jobInstance.dataTime
+            this.scriptType = jobInstance.scriptType.toDTO()
+            this.scriptCode = jobInstance.scriptCode
+            this.attemptCnt = jobInstance.attemptCnt
+            this.priority = jobInstance.priority
+            this.createdBy = jobInstance.createdBy
+            this.createdAt = jobInstance.createdAt
+            this.updatedBy = jobInstance.updatedBy
+            this.updatedAt = jobInstance.updatedAt
         }
     }
 
-    fun toJobInstanceQueryDetailDTO(domainModel: JobInstance): JobInstanceDetailResponseDTO {
+    fun toJobInstanceQueryDetailDTO(jobInstance: JobInstance): JobInstanceDetailResponseDTO {
         return JobInstanceDetailResponseDTO().apply {
-            this.id = domainModel.id!!.value
-            this.jobId = domainModel.jobId?.value
-            this.appCode = domainModel.appGroup?.code
-            this.appName = domainModel.appGroup?.name
-            this.schedulerAddress = domainModel.schedulerAddress
-            this.workerAddress = domainModel.workerAddress
-            this.jobName = domainModel.jobName
-            this.jobType = domainModel.jobType.toDTO()
-            this.processor = domainModel.processor
-            this.jobStatus = domainModel.jobStatus.toDTO()
-            this.scheduleAt = domainModel.scheduleAt
-            this.startAt = domainModel.startAt
-            this.endAt = domainModel.endAt
-            this.executeParams = domainModel.executeParams
-            this.executeMode = domainModel.executeMode.toDTO()
-            this.scheduleType = domainModel.scheduleType.toDTO()
-            this.message = domainModel.message
-            this.dataTime = domainModel.dataTime
-            this.scriptType = domainModel.scriptType.toDTO()
-            this.scriptCode = domainModel.scriptCode
-            this.attemptCnt = domainModel.attemptCnt
-            this.priority = domainModel.priority
+            this.id = jobInstance.id!!.value
+            this.jobId = jobInstance.sourceId?.value
+            this.appCode = jobInstance.appGroup?.code
+            this.appName = jobInstance.appGroup?.name
+            this.schedulerAddress = jobInstance.schedulerAddress
+            this.workerAddress = jobInstance.workerAddress
+            this.jobName = jobInstance.jobName
+            this.jobType = jobInstance.jobType.toDTO()
+            this.processor = jobInstance.processor
+            this.jobStatus = jobInstance.jobStatus.toDTO()
+            this.scheduleAt = jobInstance.scheduleAt
+            this.startAt = jobInstance.startAt
+            this.endAt = jobInstance.endAt
+            this.executeParams = jobInstance.executeParams
+            this.executeMode = jobInstance.executeMode.toDTO()
+            this.scheduleType = jobInstance.scheduleType.toDTO()
+            this.message = jobInstance.message
+            this.dataTime = jobInstance.dataTime
+            this.scriptType = jobInstance.scriptType.toDTO()
+            this.scriptCode = jobInstance.scriptCode
+            this.attemptCnt = jobInstance.attemptCnt
+            this.priority = jobInstance.priority
         }
     }
 

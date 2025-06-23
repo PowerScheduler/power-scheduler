@@ -6,6 +6,7 @@ import org.springframework.data.domain.Sort
 import org.springframework.data.jpa.domain.Specification
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Repository
+import tech.powerscheduler.common.enums.JobSourceTypeEnum
 import tech.powerscheduler.common.enums.JobStatusEnum
 import tech.powerscheduler.server.domain.common.Page
 import tech.powerscheduler.server.domain.common.PageQuery
@@ -69,8 +70,11 @@ class JobInstanceRepositoryImpl(
             val appGroupEqual = query.appCode.takeUnless { it.isNullOrBlank() }?.let {
                 criteriaBuilder.equal(joinAppGroup.get<String>(AppGroupEntity::code.name), it)
             }
-            val jobIdEqual = query.jobId?.let {
-                criteriaBuilder.equal(root.get<Long>(JobInstanceEntity::jobId.name), it)
+            val sourceIdEqual = query.sourceId?.let {
+                criteriaBuilder.equal(root.get<Long>(JobInstanceEntity::sourceId.name), it)
+            }
+            val sourceTypeEqual = query.sourceType?.let {
+                criteriaBuilder.equal(root.get<String>(JobInstanceEntity::sourceType.name), it)
             }
             val jobInstanceIdEqual = query.jobInstanceId?.let {
                 criteriaBuilder.equal(root.get<Long>(JobInstanceEntity::id.name), it)
@@ -89,7 +93,7 @@ class JobInstanceRepositoryImpl(
             }
             val predicates = listOfNotNull(
                 namespaceCodeEqual, appGroupEqual,
-                jobIdEqual, jobInstanceIdEqual, jobNameLike,
+                sourceIdEqual, sourceTypeEqual, jobInstanceIdEqual, jobNameLike,
                 jobStatusEquals, startAtBetween, endAtBetween,
             )
             criteriaBuilder.and(*predicates.toTypedArray())
@@ -114,9 +118,10 @@ class JobInstanceRepositoryImpl(
         jobIds: Iterable<JobId>,
         jobStatuses: Iterable<JobStatusEnum>
     ): Map<JobId, Long> {
-        val group = jobInstanceJpaRepository.countGroupByJobIdAndJobStatus(
-            jobIds = jobIds.map { it.value },
-            jobStatuses = jobStatuses
+        val group = jobInstanceJpaRepository.countGroupBySourceIdAndJobStatus(
+            sourceIds = jobIds.map { it.value },
+            sourceType = JobSourceTypeEnum.JOB,
+            jobStatuses = jobStatuses,
         )
         return group.associate { JobId(it[0] as Long) to it[1] as Long }
     }
@@ -131,8 +136,8 @@ class JobInstanceRepositoryImpl(
             pageQuery.pageSize,
             Sort.by(JobInstanceEntity::id.name).ascending()
         )
-        val page = jobInstanceJpaRepository.listIdByJobIdAndJobStatus(
-            jobId = jobId.value,
+        val page = jobInstanceJpaRepository.listIdBySourceIdAndJobStatus(
+            sourceId = jobId.value,
             jobStatuses = jobStatuses,
             pageable = pageable,
         )
@@ -150,8 +155,9 @@ class JobInstanceRepositoryImpl(
             pageQuery.pageSize,
             Sort.by(JobInstanceEntity::id.name).ascending()
         )
-        val page = jobInstanceJpaRepository.listIdByJobIdAndJobStatusAndEndAtBefore(
-            jobId = jobId.value,
+        val page = jobInstanceJpaRepository.listIdBySourceIdAndJobStatusAndEndAtBefore(
+            sourceId = jobId.value,
+            sourceType = JobSourceTypeEnum.JOB,
             jobStatuses = jobStatuses,
             endAt = endAt,
             pageable = pageable,
@@ -160,7 +166,8 @@ class JobInstanceRepositoryImpl(
     }
 
     override fun listDispatchable(
-        jobIds: Iterable<JobId>,
+        sourceIds: Iterable<SourceId>,
+        sourceType: JobSourceTypeEnum,
         pageQuery: PageQuery
     ): Page<JobInstanceId> {
         val pageable = PageRequest.of(
@@ -169,7 +176,8 @@ class JobInstanceRepositoryImpl(
             Sort.by(JobInstanceEntity::scheduleAt.name).ascending()
         )
         val page = jobInstanceJpaRepository.listDispatchable(
-            jobIds = jobIds.map { it.value },
+            sourceIds = sourceIds.map { it.value },
+            sourceType = sourceType,
             jobStatuses = listOf(JobStatusEnum.WAITING_SCHEDULE),
             pageRequest = pageable,
         )

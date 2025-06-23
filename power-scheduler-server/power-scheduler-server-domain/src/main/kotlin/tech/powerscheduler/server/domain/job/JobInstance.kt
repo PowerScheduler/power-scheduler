@@ -4,6 +4,7 @@ import tech.powerscheduler.common.enums.*
 import tech.powerscheduler.common.enums.ExecuteModeEnum.*
 import tech.powerscheduler.server.domain.appgroup.AppGroup
 import tech.powerscheduler.server.domain.task.Task
+import tech.powerscheduler.server.domain.worker.WorkerRegistry
 import java.time.LocalDateTime
 
 /**
@@ -25,9 +26,24 @@ class JobInstance {
     var id: JobInstanceId? = null
 
     /**
-     * 任务id
+     * 任务来源对象的id(JobId 或者 WorkflowId)
      */
-    var jobId: JobId? = null
+    var sourceId: SourceId? = null
+
+    /**
+     * 任务来源
+     */
+    var sourceType: JobSourceTypeEnum? = null
+
+    /**
+     * 工作流实例编码
+     */
+    var workflowInstanceCode: String? = null
+
+    /**
+     * 工作流节点实例编码
+     */
+    var workflowNodeInstanceCode: String? = null
 
     /**
      * 任务名称
@@ -180,10 +196,11 @@ class JobInstance {
         this.jobStatus = JobStatusEnum.WAITING_SCHEDULE
     }
 
-    fun cloneForReattempt(): JobInstance {
+    fun cloneForRetry(): JobInstance {
         val newInstance = JobInstance().also {
             it.appGroup = this.appGroup
-            it.jobId = this.jobId
+            it.sourceType = this.sourceType
+            it.sourceId = this.sourceId
             it.jobName = this.jobName
             it.jobType = this.jobType
             it.processor = this.processor
@@ -198,15 +215,55 @@ class JobInstance {
             it.attemptCnt = 0
             it.maxAttemptCnt = 0
             it.attemptInterval = this.attemptInterval
+            it.taskMaxAttemptCnt = 0
+            it.taskAttemptInterval = 0
             it.priority = this.priority
         }
         return newInstance
     }
 
+    fun createTasks(availableWorkers: List<WorkerRegistry>): List<Task> {
+        val tasks = when (executeMode!!) {
+            // 单机模式创建1个task
+            // Map/MapReduce模式 先创建1个task，后续根据任务上报的结果持续创建子task(需要做好幂等)
+            SINGLE, MAP, MAP_REDUCE -> {
+                val targetWorkerAddress = selectWorker(candidateWorkers = availableWorkers)
+                val task = this.createTask(targetWorkerAddress)
+                listOf(task)
+            }
+            // 广播模式 有多少台在线的worker就创建多少个task
+            BROADCAST -> {
+                availableWorkers.map { this.createTask(it.address) }
+            }
+        }
+        return tasks
+    }
+
+    private fun selectWorker(
+        candidateWorkers: List<WorkerRegistry>
+    ): String {
+        val specifiedWorkerAddress = this.workerAddress
+        val executeMode = this.executeMode
+        if (executeMode == SINGLE && specifiedWorkerAddress.orEmpty().isNotBlank()) {
+            // 使用用户指定的运行机器
+            return specifiedWorkerAddress!!
+        }
+        return if (this.attemptCnt!! > 0 && candidateWorkers.size > 1) {
+            // 如果上次任务执行失败了，本次就换个节点执行
+            candidateWorkers.asSequence()
+                .filterNot { it.address == this.workerAddress }
+                .maxBy { it.healthScore }
+                .address
+        } else {
+            candidateWorkers.maxBy { it.healthScore }.address
+        }
+    }
+
     fun createTask(workerAddress: String?): Task {
         val task = Task().also {
             it.appGroup = this.appGroup
-            it.jobId = this.jobId
+            it.sourceId = this.sourceId
+            it.sourceType = this.sourceType
             it.jobInstanceId = this.id
             it.taskName = this.jobName
             it.jobType = this.jobType
@@ -252,6 +309,28 @@ class JobInstance {
             }
         }
         return task
+    }
+
+    fun updateProgress(tasks: Iterable<Task>) {
+        val calculatedJobStatus = this.calculateJobStatus(tasks)
+        this.jobStatus = calculatedJobStatus
+        // task可能会失败重试, 开始时间只取第一个task的开始时间
+        if (this.startAt == null) {
+            this.startAt = this.calculateStartAt(tasks)
+        }
+        this.workerAddress = this.calculateWorkerAddress(tasks)
+        if (calculatedJobStatus in JobStatusEnum.COMPLETED_STATUSES) {
+            this.endAt = this.calculateEndAt(tasks)
+        }
+        if (calculatedJobStatus == JobStatusEnum.FAILED) {
+            if (this.canReattempt) {
+                this.resetStatusForReattempt()
+            } else {
+                if (this.executeMode == SINGLE) {
+                    this.message = tasks.mapNotNull { it.result }.firstOrNull { it.isNotBlank() }
+                }
+            }
+        }
     }
 
     fun calculateJobStatus(tasks: Iterable<Task>): JobStatusEnum {

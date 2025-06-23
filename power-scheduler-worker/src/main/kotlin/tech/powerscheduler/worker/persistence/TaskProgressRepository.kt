@@ -20,7 +20,7 @@ object TaskProgressRepository {
     fun save(entity: TaskProgressEntity) {
         DataSourceManager.getConnection().use { conn ->
             conn.prepareStatement(insertSql).use { stmt ->
-                stmt.setObject(1, entity.jobId)
+                stmt.setObject(1, null)
                 stmt.setObject(2, entity.jobInstanceId)
                 stmt.setObject(3, entity.taskId)
                 stmt.setString(4, entity.status?.name)
@@ -55,7 +55,6 @@ object TaskProgressRepository {
                         if (rs.next()) {
                             TaskProgressEntity().apply {
                                 this.id = rs.getLong("id")
-                                this.jobId = rs.getLong("job_id")
                                 this.jobInstanceId = rs.getLong("job_instance_id")
                                 this.taskId = rs.getLong("task_id")
                                 this.status = rs.getString("status")?.let { JobStatusEnum.valueOf(it) }

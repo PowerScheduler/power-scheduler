@@ -43,7 +43,7 @@ class JobInstanceAssemblerTest : FunSpec({
             val jobInstance = JobInstance().also {
                 it.appGroup = appGroup
                 it.id = JobInstanceId(1L)
-                it.jobId = JobId(2L)
+                it.sourceId = JobId(2L)
                 it.jobName = "jobName"
                 it.jobType = JobTypeEnum.JAVA
                 it.processor = "processor"
@@ -65,7 +65,7 @@ class JobInstanceAssemblerTest : FunSpec({
                 jobInstanceAssembler.toJobInstanceQueryResponseDTO(jobInstance)
             }
             result.id shouldBe jobInstance.id!!.value
-            result.jobId shouldBe jobInstance.jobId?.value
+            result.jobId shouldBe jobInstance.sourceId?.value
             result.appCode shouldBe appGroup.code
             result.jobName shouldBe jobInstance.jobName
             result.jobType?.code shouldBe jobInstance.jobType?.name
@@ -100,7 +100,7 @@ class JobInstanceAssemblerTest : FunSpec({
             val jobInstance = JobInstance().also {
                 it.appGroup = appGroup
                 it.id = JobInstanceId(1L)
-                it.jobId = JobId(2L)
+                it.sourceId = JobId(2L)
                 it.jobName = "jobName"
                 it.jobType = JobTypeEnum.JAVA
                 it.processor = "processor"
@@ -122,7 +122,7 @@ class JobInstanceAssemblerTest : FunSpec({
                 jobInstanceAssembler.toJobInstanceQueryDetailDTO(jobInstance)
             }
             result.id shouldBe jobInstance.id!!.value
-            result.jobId shouldBe jobInstance.jobId?.value
+            result.jobId shouldBe jobInstance.sourceId?.value
             result.appCode shouldBe appGroup.code
             result.jobName shouldBe jobInstance.jobName
             result.jobType?.code shouldBe jobInstance.jobType?.name

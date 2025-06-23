@@ -17,27 +17,32 @@ import tech.powerscheduler.server.application.dto.request.JobRunRequestDTO
 import tech.powerscheduler.server.application.dto.response.JobInstanceDetailResponseDTO
 import tech.powerscheduler.server.application.dto.response.JobInstanceQueryResponseDTO
 import tech.powerscheduler.server.domain.common.Page
+import tech.powerscheduler.server.domain.domainevent.DomainEventRepository
 import tech.powerscheduler.server.domain.job.*
 import tech.powerscheduler.server.domain.task.TaskRepository
+import tech.powerscheduler.server.domain.workflow.WorkflowInstanceRepository
 
 class JobInstanceServiceTest : FunSpec({
 
     val taskRepository = mockk<TaskRepository>()
     val jobInfoRepository = mockk<JobInfoRepository>()
+    val domainEventRepository = mockk<DomainEventRepository>()
     val jobInstanceRepository = mockk<JobInstanceRepository>()
+    val workflowInstanceRepository = mockk<WorkflowInstanceRepository>()
     val taskAssembler = mockk<TaskAssembler>()
     val jobInstanceAssembler = mockk<JobInstanceAssembler>()
     val transactionTemplate = mockk<TransactionTemplate>()
     val applicationEventPublisher = mockk<ApplicationEventPublisher>()
 
     val jobInstanceService = JobInstanceService(
+        taskAssembler = taskAssembler,
         taskRepository = taskRepository,
         jobInfoRepository = jobInfoRepository,
         jobInstanceRepository = jobInstanceRepository,
         jobInstanceAssembler = jobInstanceAssembler,
-        transactionTemplate = transactionTemplate,
+        domainEventRepository = domainEventRepository,
+        workflowInstanceRepository = workflowInstanceRepository,
         applicationEventPublisher = applicationEventPublisher,
-        taskAssembler = taskAssembler,
     )
 
     context("test ${JobInstanceService::list}") {
@@ -97,7 +102,7 @@ class JobInstanceServiceTest : FunSpec({
             val jobInstanceId = JobInstanceId(1L)
             val jobInstance = JobInstance().also {
                 it.id = jobInstanceId
-                it.jobId = JobId(param.jobId!!)
+                it.sourceId = SourceId(param.jobId!!)
             }
             every { jobInfoRepository.findById(JobId(param.jobId!!)) } returns jobInfo
             every { jobInfo.createInstance() } returns jobInstance
@@ -108,11 +113,11 @@ class JobInstanceServiceTest : FunSpec({
         }
     }
 
-    context("test ${JobInstanceService::reattempt}") {
+    context("test ${JobInstanceService::retry}") {
         test("throw BizException when jobInstanceId not exists") {
             every { jobInstanceRepository.findById(any()) } returns null
             shouldThrow<BizException> {
-                jobInstanceService.reattempt(1L)
+                jobInstanceService.retry(1L)
             }
         }
 
@@ -124,9 +129,9 @@ class JobInstanceServiceTest : FunSpec({
             val jobInstanceToReattempt = JobInstance()
             val reattemptJobInstanceId = JobInstanceId(2L)
             every { jobInstanceRepository.findById(JobInstanceId(param)) } returns jobInstance
-            every { jobInstance.cloneForReattempt() } returns jobInstanceToReattempt
+            every { jobInstance.cloneForRetry() } returns jobInstanceToReattempt
             every { jobInstanceRepository.save(jobInstanceToReattempt) } returns reattemptJobInstanceId
-            val result = shouldNotThrowAny { jobInstanceService.reattempt(param) }
+            val result = shouldNotThrowAny { jobInstanceService.retry(param) }
             result.shouldNotBeNull()
             result shouldBe reattemptJobInstanceId.value
         }

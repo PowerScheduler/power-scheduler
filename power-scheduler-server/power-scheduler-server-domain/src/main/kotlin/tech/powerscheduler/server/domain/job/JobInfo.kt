@@ -166,7 +166,8 @@ class JobInfo {
     fun createInstance(): JobInstance {
         return JobInstance().also {
             it.appGroup = this.appGroup
-            it.jobId = this.id
+            it.sourceId = this.id!!.toSourceId()
+            it.sourceType = JobSourceTypeEnum.JOB
             it.jobName = this.jobName
             it.jobType = this.jobType
             it.processor = this.processor
@@ -204,7 +205,7 @@ class JobInfo {
     fun updateNextScheduleTime(
         now: LocalDateTime = LocalDateTime.now(),
     ) {
-        validScheduleConfig()
+        validate()
         if (this.nextScheduleAt == null) {
             initNextScheduleTime()
             return
@@ -241,12 +242,14 @@ class JobInfo {
         this.nextScheduleAt = nextScheduleTime
     }
 
+    fun validate() {
+        validScheduleConfig()
+        validateExecuteConfig()
+    }
+
     fun validScheduleConfig() {
         if (scheduleConfig.isNullOrBlank()) {
             throw BizException("调度配置不能为空")
-        }
-        if (this.jobType == JobTypeEnum.SCRIPT && this.executeMode in arrayOf(MAP, MAP_REDUCE)) {
-            throw BizException("脚本任务不能使用[$executeMode]模式")
         }
         when (scheduleType) {
             CRON -> {
@@ -269,7 +272,12 @@ class JobInfo {
 
             null -> throw BizException("调度类型不能为null")
         }
+    }
 
+    private fun validateExecuteConfig() {
+        if (this.jobType == JobTypeEnum.SCRIPT && this.executeMode in arrayOf(MAP, MAP_REDUCE)) {
+            throw BizException("脚本任务不能使用[$executeMode]模式")
+        }
         when (executeMode) {
             SINGLE -> {}
 

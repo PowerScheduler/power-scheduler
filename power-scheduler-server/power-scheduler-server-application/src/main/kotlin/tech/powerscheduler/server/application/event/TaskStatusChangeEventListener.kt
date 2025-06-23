@@ -5,7 +5,10 @@ import org.springframework.stereotype.Component
 import tech.powerscheduler.common.enums.ExecuteModeEnum.*
 import tech.powerscheduler.server.application.service.JobInstanceService
 import tech.powerscheduler.server.application.utils.JSON
-import tech.powerscheduler.server.domain.domainevent.*
+import tech.powerscheduler.server.domain.domainevent.AggregateTypeEnum
+import tech.powerscheduler.server.domain.domainevent.DomainEvent
+import tech.powerscheduler.server.domain.domainevent.DomainEventRepository
+import tech.powerscheduler.server.domain.domainevent.DomainEventTypeEnum
 import tech.powerscheduler.server.domain.job.JobInstanceId
 import tech.powerscheduler.server.domain.task.TaskStatusChangeEvent
 
@@ -28,14 +31,12 @@ class TaskStatusChangeEventListener(
     }
 
     fun persistentEvent(event: TaskStatusChangeEvent) {
-        val domainEvent = DomainEvent().apply {
-            this.eventStatus = DomainEventStatusEnum.PENDING
-            this.aggregateId = event.jobInstanceId.toString()
-            this.aggregateType = AggregateTypeEnum.JOB_INSTANCE
-            this.eventType = DomainEventTypeEnum.TASK_STATUS_CHANGED
-            this.body = JSON.writeValueAsString(event)
-            this.retryCnt = 0
-        }
+        val domainEvent = DomainEvent.create(
+            aggregateId = event.jobInstanceId.toString(),
+            aggregateType = AggregateTypeEnum.JOB_INSTANCE,
+            eventType = DomainEventTypeEnum.TASK_STATUS_CHANGED,
+            body = JSON.writeValueAsString(event),
+        )
         domainEventRepository.save(domainEvent)
     }
 

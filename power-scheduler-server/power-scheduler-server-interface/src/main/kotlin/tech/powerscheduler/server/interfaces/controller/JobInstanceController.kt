@@ -48,9 +48,9 @@ internal class JobInstanceController(
     }
 
     @Operation(summary = "重跑任务")
-    @PostMapping("/reattempt")
-    fun reattempt(@NotNull jobInstanceId: Long?) = wrapperResponse {
-        jobInstanceService.reattempt(jobInstanceId!!)
+    @PostMapping("retry")
+    fun retryJobInstance(@NotNull jobInstanceId: Long?) = wrapperResponse {
+        jobInstanceService.retry(jobInstanceId!!)
     }
 
     @Operation(summary = "查询任务进度")

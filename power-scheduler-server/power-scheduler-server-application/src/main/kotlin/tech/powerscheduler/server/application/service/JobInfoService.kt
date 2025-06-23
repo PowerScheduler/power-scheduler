@@ -50,7 +50,7 @@ class JobInfoService(
         val appGroup = appGroupRepository.findByCode(namespace, appCode)
             ?: throw BizException(message = "任务新增失败: 应用分组不存在")
         val jobInfo = jobInfoAssembler.toDomainModel4AddRequest(param, appGroup).apply {
-            validScheduleConfig()
+            validate()
         }
         val jobId = jobInfoRepository.save(jobInfo)
         return jobId.value
@@ -62,7 +62,7 @@ class JobInfoService(
         val jobInfo = jobInfoRepository.lockById(jobId)
             ?: throw BizException(message = "任务保存失败: 任务不存在")
         val jobInfoToSave = jobInfoAssembler.toDomainModel4EditRequest(jobInfo, param).apply {
-            validScheduleConfig()
+            validate()
         }
         jobInfoRepository.save(jobInfoToSave)
     }

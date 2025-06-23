@@ -15,18 +15,15 @@ import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 import org.springframework.context.ApplicationContext
 import org.springframework.transaction.support.TransactionTemplate
-import tech.powerscheduler.common.enums.ExecuteModeEnum.*
+import tech.powerscheduler.common.enums.JobSourceTypeEnum
 import tech.powerscheduler.common.enums.JobStatusEnum
 import tech.powerscheduler.common.enums.ScheduleTypeEnum
-import tech.powerscheduler.server.application.utils.hostPort
 import tech.powerscheduler.server.application.utils.registerSelfAsService
 import tech.powerscheduler.server.domain.appgroup.AppGroupKey
 import tech.powerscheduler.server.domain.common.PageQuery
 import tech.powerscheduler.server.domain.job.JobId
 import tech.powerscheduler.server.domain.job.JobInfoRepository
-import tech.powerscheduler.server.domain.job.JobInstance
 import tech.powerscheduler.server.domain.job.JobInstanceRepository
-import tech.powerscheduler.server.domain.task.Task
 import tech.powerscheduler.server.domain.task.TaskRepository
 import tech.powerscheduler.server.domain.worker.WorkerRegistry
 import tech.powerscheduler.server.domain.worker.WorkerRegistryRepository
@@ -35,6 +32,7 @@ import java.time.LocalDateTime
 
 class JobSchedulerActor(
     context: ActorContext<Command>,
+    private val serverAddressHolder: ServerAddressHolder,
     private val taskRepository: TaskRepository,
     private val jobInfoRepository: JobInfoRepository,
     private val jobInstanceRepository: JobInstanceRepository,
@@ -46,12 +44,10 @@ class JobSchedulerActor(
 
     sealed interface Command {
         object ScheduleJobs : Command
-
         object CreateTasks : Command
     }
 
     companion object {
-
         val SERVICE_KEY: ServiceKey<Command> = ServiceKey.create<Command>(
             Command::class.java,
             JobSchedulerActor::class.simpleName
@@ -60,6 +56,7 @@ class JobSchedulerActor(
         fun create(
             applicationContext: ApplicationContext,
         ): Behavior<Command> {
+            val serverAddressHolder = applicationContext.getBean(ServerAddressHolder::class.java)
             val taskRepository = applicationContext.getBean(TaskRepository::class.java)
             val jobInfoRepository = applicationContext.getBean(JobInfoRepository::class.java)
             val jobInstanceRepository = applicationContext.getBean(JobInstanceRepository::class.java)
@@ -77,6 +74,7 @@ class JobSchedulerActor(
                     )
                     val jobSchedulerActor = JobSchedulerActor(
                         context = context,
+                        serverAddressHolder = serverAddressHolder,
                         taskRepository = taskRepository,
                         jobInfoRepository = jobInfoRepository,
                         jobInstanceRepository = jobInstanceRepository,
@@ -104,7 +102,7 @@ class JobSchedulerActor(
 
     private fun handleScheduleDueJobs(): Behavior<Command> {
         var pageNo = 1
-        val currentServerAddress = context.system.hostPort()
+        val currentServerAddress = serverAddressHolder.address
         do {
             val pageQuery = PageQuery(pageNo = pageNo++, pageSize = 200)
             val assignedJobIdPage = jobInfoRepository.listIdsByEnabledAndSchedulerAddress(
@@ -228,7 +226,7 @@ class JobSchedulerActor(
 
     private fun handleCreateTasks(): Behavior<Command> {
         var pageNo = 1
-        val currentServerAddress = context.system.hostPort()
+        val currentServerAddress = serverAddressHolder.address
         do {
             val pageQuery = PageQuery(pageNo = pageNo++, pageSize = 200)
             val jobIdPage = jobInfoRepository.listIdsByEnabledAndSchedulerAddress(
@@ -250,7 +248,8 @@ class JobSchedulerActor(
         do {
             val pageQuery = PageQuery(pageNo = pageNo++, pageSize = 200)
             val jobInstanceIdPage = jobInstanceRepository.listDispatchable(
-                jobIds = jobIds,
+                sourceIds = jobIds.map { it.toSourceId() },
+                sourceType = JobSourceTypeEnum.JOB,
                 pageQuery = pageQuery
             )
             if (jobInstanceIdPage.isEmpty()) {
@@ -281,7 +280,7 @@ class JobSchedulerActor(
                         return@executeWithoutResult
                     }
                     jobInstance.jobStatus = JobStatusEnum.WAITING_DISPATCH
-                    val tasks = doCreateTasks(jobInstance, workerRegistries)
+                    val tasks = jobInstance.createTasks(workerRegistries)
                     jobInstanceRepository.save(jobInstance)
                     taskRepository.saveAll(tasks)
                 }
@@ -289,52 +288,10 @@ class JobSchedulerActor(
         } while (jobInstanceIdPage.isNotEmpty())
     }
 
-    private fun doCreateTasks(jobInstance: JobInstance, availableWorkers: List<WorkerRegistry>): List<Task> {
-        val executeMode = jobInstance.executeMode
-        val tasks = when (executeMode!!) {
-            // 单机模式创建1个task
-            // Map/MapReduce模式 先创建1个task，后续根据任务上报的结果持续创建子task(需要做好幂等)
-            SINGLE, MAP, MAP_REDUCE -> {
-                val targetWorkerAddress = selectWorker(
-                    jobInstance = jobInstance,
-                    candidateWorkers = availableWorkers,
-                )
-                val task = jobInstance.createTask(targetWorkerAddress)
-                listOf(task)
-            }
-            // 广播模式 有多少台在线的worker就创建多少个task
-            BROADCAST -> {
-                availableWorkers.map { jobInstance.createTask(it.address) }
-            }
-        }
-        return tasks
-    }
-
-    private fun selectWorker(
-        jobInstance: JobInstance,
-        candidateWorkers: List<WorkerRegistry>
-    ): String {
-        val specifiedWorkerAddress = jobInstance.workerAddress
-        val executeMode = jobInstance.executeMode
-        if (executeMode == SINGLE && specifiedWorkerAddress.orEmpty().isNotBlank()) {
-            // 使用用户指定的运行机器
-            return specifiedWorkerAddress!!
-        }
-        return if (jobInstance.attemptCnt!! > 0 && candidateWorkers.size > 1) {
-            // 如果上次任务执行失败了，本次就换个节点执行
-            candidateWorkers.asSequence()
-                .filterNot { it.address == jobInstance.workerAddress }
-                .maxBy { it.healthScore }
-                .address
-        } else {
-            candidateWorkers.maxBy { it.healthScore }.address
-        }
-    }
-
     private fun onPostStop(): Behavior<Command> {
         log.info("start to reset jobs assigned to this server")
-        val currentServerAddress = context.system.hostPort()
-        jobInfoRepository.clearSchedulerAddress(currentServerAddress)
+        val currentServerAddress = serverAddressHolder.address
+        jobInfoRepository.clearSchedulerByAddress(currentServerAddress)
         log.info("successfully reset jobs assigned to this server")
         return this
     }

@@ -2,8 +2,8 @@ package tech.powerscheduler.server.domain.task
 
 import tech.powerscheduler.common.enums.*
 import tech.powerscheduler.server.domain.appgroup.AppGroup
-import tech.powerscheduler.server.domain.job.JobId
 import tech.powerscheduler.server.domain.job.JobInstanceId
+import tech.powerscheduler.server.domain.job.SourceId
 import java.time.LocalDateTime
 
 /**
@@ -28,9 +28,14 @@ class Task {
     var parentId: TaskId? = null
 
     /**
-     * 任务id
+     * 任务来源对象的id(JobId 或者 WorkflowId)
      */
-    var jobId: JobId? = null
+    var sourceId: SourceId? = null
+
+    /**
+     * 任务来源
+     */
+    var sourceType: JobSourceTypeEnum? = null
 
     /**
      * 任务实例id
@@ -194,7 +199,8 @@ class Task {
             Task().also {
                 it.appGroup = this.appGroup
                 it.parentId = this.id
-                it.jobId = this.jobId
+                it.sourceId = this.sourceId
+                it.sourceType = this.sourceType
                 it.jobInstanceId = this.jobInstanceId
                 it.taskName = subTaskName
                 it.jobType = this.jobType
@@ -219,7 +225,8 @@ class Task {
     fun createReduceTask(): Task {
         return Task().also {
             it.appGroup = this.appGroup
-            it.jobId = this.jobId
+            it.sourceId = this.sourceId
+            it.sourceType = this.sourceType
             it.jobInstanceId = this.jobInstanceId
             it.taskName = "REDUCE_TASK"
             it.jobType = this.jobType

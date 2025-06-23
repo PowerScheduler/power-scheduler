@@ -140,7 +140,6 @@ class Task(
             this.endAt = LocalDateTime.now()
         }
         val taskProgressEntity = TaskProgressEntity().also {
-            it.jobId = this.context.jobId!!
             it.jobInstanceId = this.context.jobInstanceId!!
             it.taskId = this.context.taskId!!
             it.status = this.jobStatus

@@ -4,13 +4,14 @@ import org.slf4j.LoggerFactory
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import org.springframework.transaction.support.TransactionTemplate
 import tech.powerscheduler.common.dto.response.PageDTO
-import tech.powerscheduler.common.enums.ExecuteModeEnum
+import tech.powerscheduler.common.enums.JobSourceTypeEnum.JOB
+import tech.powerscheduler.common.enums.JobSourceTypeEnum.WORKFLOW
 import tech.powerscheduler.common.enums.JobStatusEnum
 import tech.powerscheduler.common.enums.JobStatusEnum.*
 import tech.powerscheduler.common.enums.ScheduleTypeEnum
 import tech.powerscheduler.common.enums.TaskTypeEnum
+import tech.powerscheduler.common.enums.WorkflowStatusEnum
 import tech.powerscheduler.common.exception.BizException
 import tech.powerscheduler.server.application.assembler.JobInstanceAssembler
 import tech.powerscheduler.server.application.assembler.TaskAssembler
@@ -20,10 +21,17 @@ import tech.powerscheduler.server.application.dto.request.JobRunRequestDTO
 import tech.powerscheduler.server.application.dto.response.JobInstanceDetailResponseDTO
 import tech.powerscheduler.server.application.dto.response.JobInstanceQueryResponseDTO
 import tech.powerscheduler.server.application.dto.response.JobProgressQueryResponseDTO
+import tech.powerscheduler.server.application.utils.JSON
 import tech.powerscheduler.server.application.utils.toDTO
 import tech.powerscheduler.server.domain.common.PageQuery
+import tech.powerscheduler.server.domain.domainevent.AggregateTypeEnum
+import tech.powerscheduler.server.domain.domainevent.DomainEvent
+import tech.powerscheduler.server.domain.domainevent.DomainEventRepository
+import tech.powerscheduler.server.domain.domainevent.DomainEventTypeEnum
 import tech.powerscheduler.server.domain.job.*
 import tech.powerscheduler.server.domain.task.TaskRepository
+import tech.powerscheduler.server.domain.workflow.WorkflowInstanceRepository
+import tech.powerscheduler.server.domain.workflow.WorkflowNodeInstanceStatusChangeEvent
 import java.time.LocalDateTime
 
 /**
@@ -39,7 +47,8 @@ class JobInstanceService(
     private val jobInfoRepository: JobInfoRepository,
     private val jobInstanceRepository: JobInstanceRepository,
     private val jobInstanceAssembler: JobInstanceAssembler,
-    private val transactionTemplate: TransactionTemplate,
+    private val domainEventRepository: DomainEventRepository,
+    private val workflowInstanceRepository: WorkflowInstanceRepository,
     private val applicationEventPublisher: ApplicationEventPublisher,
 ) {
 
@@ -94,11 +103,11 @@ class JobInstanceService(
         return jobInstanceId.value
     }
 
-    fun reattempt(jobInstanceId: Long): Long {
+    fun retry(jobInstanceId: Long): Long {
         val jobInstance = jobInstanceRepository.findById(JobInstanceId(jobInstanceId))
             ?: throw BizException(message = "重跑任务失败: 任务实例不存在")
-        val jobInstanceToReattempt = jobInstance.cloneForReattempt()
-        val jobInstanceId = jobInstanceRepository.save(jobInstanceToReattempt)
+        val jobInstanceToRetry = jobInstance.cloneForRetry()
+        val jobInstanceId = jobInstanceRepository.save(jobInstanceToRetry)
         return jobInstanceId.value
     }
 
@@ -134,47 +143,72 @@ class JobInstanceService(
             jobInstanceId = jobInstanceId,
             batch = jobInstance.batch!!
         )
-        val calculatedJobStatus = jobInstance.calculateJobStatus(tasks)
+        val oldStatus = jobInstance.jobStatus
+        jobInstance.updateProgress(tasks)
         // 如果计算出的任务状态与当前一样, 则不需要更新状态
-        if (jobInstance.jobStatus == calculatedJobStatus) {
+        if (oldStatus == jobInstance.jobStatus) {
             return
         }
-        jobInstance.apply {
-            this.jobStatus = calculatedJobStatus
-            // task可能会失败重试, 开始时间只取第一个task的开始时间
-            if (this.startAt == null) {
-                this.startAt = this.calculateStartAt(tasks)
-            }
-            this.workerAddress = this.calculateWorkerAddress(tasks)
-            if (calculatedJobStatus in JobStatusEnum.COMPLETED_STATUSES) {
-                this.endAt = this.calculateEndAt(tasks)
-            }
-            if (calculatedJobStatus == FAILED) {
-                if (this.canReattempt) {
-                    this.resetStatusForReattempt()
-                } else {
-                    if (this.executeMode == ExecuteModeEnum.SINGLE) {
-                        this.message = tasks.mapNotNull { it.result }.firstOrNull { it.isNotBlank() }
-                    }
-                }
-            }
-        }
-
         jobInstanceRepository.save(jobInstance)
-        if (jobInstance.jobStatus in JobStatusEnum.COMPLETED_STATUSES) {
-            val jobInfo = jobInfoRepository.lockById(jobInstance.jobId!!)
-            if (jobInfo == null) {
-                return
-            }
-            jobInfo.lastCompletedAt = jobInstance.endAt
-            if (jobInstance.scheduleType == ScheduleTypeEnum.ONE_TIME) {
-                jobInfo.enabled = false
-            }
-            if (jobInfo.scheduleType == ScheduleTypeEnum.FIX_DELAY) {
-                jobInfo.updateNextScheduleTime()
-            }
-            jobInfoRepository.save(jobInfo)
+        when (jobInstance.sourceType!!) {
+            JOB -> updateJobInfo(jobInstance)
+            WORKFLOW -> updateWorkflowInstance(jobInstance)
         }
         log.info("jobInstance update successfully: id={}, status={}", jobInstanceId.value, jobInstance.jobStatus)
+    }
+
+    private fun updateWorkflowInstance(jobInstance: JobInstance) {
+        val workflowInstanceCode = jobInstance.workflowInstanceCode!!
+        val workflowNodeInstanceCode = jobInstance.workflowNodeInstanceCode
+        val workflowInstance = workflowInstanceRepository.lockByCode(workflowInstanceCode)
+        if (workflowInstance == null) {
+            return
+        }
+        val workflowNodeInstance = workflowInstance.workflowNodeInstances.find {
+            it.nodeInstanceCode == workflowNodeInstanceCode
+        }!!
+        val newStatus = WorkflowStatusEnum.from(jobInstance.jobStatus!!)
+        if (workflowNodeInstance.status == newStatus) {
+            return
+        }
+        workflowNodeInstance.apply {
+            this.startAt = jobInstance.startAt
+            this.endAt = jobInstance.endAt
+            this.status = newStatus
+            this.workerAddress = jobInstance.workerAddress
+        }
+        workflowInstance.apply {
+            this.graphData!!.mapNotNull { it.data }
+                .find { it.workflowNodeInstanceCode == workflowNodeInstanceCode }
+                ?.also { it.status = workflowNodeInstance.status }
+        }
+        workflowInstanceRepository.save(workflowInstance)
+        val workflowInstanceId = workflowInstance.id!!
+        val domainEvent = DomainEvent.create(
+            aggregateId = workflowInstanceId.value.toString(),
+            aggregateType = AggregateTypeEnum.WORKFLOW_INSTANCE,
+            eventType = DomainEventTypeEnum.WORKFLOW_NODE_INSTANCE_STATUS_CHANGED,
+            body = JSON.writeValueAsString(WorkflowNodeInstanceStatusChangeEvent.create(workflowInstanceId))
+        )
+        domainEventRepository.save(domainEvent)
+        log.info(
+            "workflowNodeInstance update successfully: id={}, status={}",
+            workflowNodeInstance.id!!.value, workflowNodeInstance.status
+        )
+    }
+
+    private fun updateJobInfo(jobInstance: JobInstance) {
+        val jobInfo = jobInfoRepository.lockById(jobInstance.sourceId!!.toJobId())
+        if (jobInfo == null) {
+            return
+        }
+        jobInfo.lastCompletedAt = jobInstance.endAt
+        if (jobInfo.scheduleType == ScheduleTypeEnum.ONE_TIME) {
+            jobInfo.enabled = false
+        }
+        if (jobInfo.scheduleType == ScheduleTypeEnum.FIX_DELAY) {
+            jobInfo.updateNextScheduleTime()
+        }
+        jobInfoRepository.save(jobInfo)
     }
 }

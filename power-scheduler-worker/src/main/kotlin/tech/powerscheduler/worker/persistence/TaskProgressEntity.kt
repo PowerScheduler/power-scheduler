@@ -11,7 +11,6 @@ import java.time.LocalDateTime
  */
 class TaskProgressEntity {
     var id: Long? = null
-    var jobId: Long? = null
     var jobInstanceId: Long? = null
     var taskId: Long? = null
     var status: JobStatusEnum? = null

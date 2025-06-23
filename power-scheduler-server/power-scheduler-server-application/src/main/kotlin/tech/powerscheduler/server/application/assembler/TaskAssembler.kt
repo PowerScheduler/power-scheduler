@@ -15,28 +15,27 @@ import tech.powerscheduler.server.domain.task.Task
 @Component
 class TaskAssembler {
 
-    fun toTaskDispatchRequestDTO(domainModel: Task): JobDispatchRequestDTO {
+    fun toTaskDispatchRequestDTO(task: Task): JobDispatchRequestDTO {
         return JobDispatchRequestDTO().also {
-            it.jobId = domainModel.jobId!!.value
-            it.jobInstanceId = domainModel.jobInstanceId!!.value
-            it.taskId = domainModel.id!!.value
-            it.taskName = domainModel.taskName
-            it.parentTaskId = domainModel.parentId?.value
-            it.appCode = domainModel.appGroup?.code
-            it.jobType = domainModel.jobType
-            it.processor = domainModel.processor
-            it.jobStatus = domainModel.taskStatus
-            it.executeParams = domainModel.executeParams
-            it.scheduleAt = domainModel.scheduleAt
-            it.executeMode = domainModel.executeMode
-            it.dataTime = domainModel.dataTime
-            it.scriptType = domainModel.scriptType
-            it.scriptCode = domainModel.scriptCode
-            it.attemptCnt = domainModel.attemptCnt
-            it.priority = domainModel.priority ?: 0
-            it.taskType = domainModel.taskType
+            it.jobInstanceId = task.jobInstanceId!!.value
+            it.taskId = task.id!!.value
+            it.taskName = task.taskName
+            it.parentTaskId = task.parentId?.value
+            it.appCode = task.appGroup?.code
+            it.jobType = task.jobType
+            it.processor = task.processor
+            it.jobStatus = task.taskStatus
+            it.executeParams = task.executeParams
+            it.scheduleAt = task.scheduleAt
+            it.executeMode = task.executeMode
+            it.dataTime = task.dataTime
+            it.scriptType = task.scriptType
+            it.scriptCode = task.scriptCode
+            it.attemptCnt = task.attemptCnt
+            it.priority = task.priority ?: 0
+            it.taskType = task.taskType
             if (it.taskType == TaskTypeEnum.SUB) {
-                it.taskBody = domainModel.taskBody
+                it.taskBody = task.taskBody
             }
         }
     }

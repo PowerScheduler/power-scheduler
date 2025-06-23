@@ -15,21 +15,22 @@ import org.springframework.context.ApplicationContext
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.transaction.support.TransactionTemplate
 import tech.powerscheduler.common.enums.ExecuteModeEnum
+import tech.powerscheduler.common.enums.JobSourceTypeEnum
 import tech.powerscheduler.common.enums.JobStatusEnum
 import tech.powerscheduler.server.application.assembler.TaskAssembler
-import tech.powerscheduler.server.application.utils.hostPort
 import tech.powerscheduler.server.domain.appgroup.AppGroupKey
 import tech.powerscheduler.server.domain.common.PageQuery
-import tech.powerscheduler.server.domain.job.JobId
 import tech.powerscheduler.server.domain.job.JobInfoRepository
 import tech.powerscheduler.server.domain.job.JobInstance
 import tech.powerscheduler.server.domain.job.JobInstanceRepository
+import tech.powerscheduler.server.domain.job.SourceId
 import tech.powerscheduler.server.domain.task.Task
 import tech.powerscheduler.server.domain.task.TaskRepository
 import tech.powerscheduler.server.domain.task.TaskStatusChangeEvent
 import tech.powerscheduler.server.domain.worker.WorkerRegistry
 import tech.powerscheduler.server.domain.worker.WorkerRegistryRepository
 import tech.powerscheduler.server.domain.worker.WorkerRemoteService
+import tech.powerscheduler.server.domain.workflow.WorkflowRepository
 import java.time.Duration
 
 /**
@@ -41,17 +42,20 @@ class TaskDispatcherActor(
     private val taskAssembler: TaskAssembler,
     private val taskRepository: TaskRepository,
     private val jobInfoRepository: JobInfoRepository,
+    private val workflowRepository: WorkflowRepository,
     private val jobInstanceRepository: JobInstanceRepository,
     private val workerRegistryRepository: WorkerRegistryRepository,
     private val workerRemoteService: WorkerRemoteService,
     private val applicationEventPublisher: ApplicationEventPublisher,
     private val transactionTemplate: TransactionTemplate,
+    private val serverAddressHolder: ServerAddressHolder,
 ) : AbstractBehavior<TaskDispatcherActor.Command>(context) {
 
     private val log = LoggerFactory.getLogger(this.javaClass)
 
     sealed interface Command {
-        object DispatchJobs : Command
+        object DispatchJobTask : Command
+        object DispatchWorkflowTask : Command
     }
 
     companion object {
@@ -64,12 +68,18 @@ class TaskDispatcherActor(
             val workerRegistryRepository = applicationContext.getBean(WorkerRegistryRepository::class.java)
             val workerRemoteService = applicationContext.getBean(WorkerRemoteService::class.java)
             val jobInfoRepository = applicationContext.getBean(JobInfoRepository::class.java)
+            val workflowRepository = applicationContext.getBean(WorkflowRepository::class.java)
             val transactionTemplate = applicationContext.getBean(TransactionTemplate::class.java)
+            val serverAddressHolder = applicationContext.getBean(ServerAddressHolder::class.java)
             val applicationEventPublisher = applicationContext as ApplicationEventPublisher
             return Behaviors.setup { context ->
                 return@setup Behaviors.withTimers { timer ->
                     timer.startTimerWithFixedDelay(
-                        Command.DispatchJobs,
+                        Command.DispatchJobTask,
+                        Duration.ofSeconds(1)
+                    )
+                    timer.startTimerWithFixedDelay(
+                        Command.DispatchWorkflowTask,
                         Duration.ofSeconds(1)
                     )
                     val jobDispatcherActor = TaskDispatcherActor(
@@ -77,11 +87,13 @@ class TaskDispatcherActor(
                         taskAssembler = taskAssembler,
                         taskRepository = taskRepository,
                         jobInfoRepository = jobInfoRepository,
+                        workflowRepository = workflowRepository,
                         jobInstanceRepository = jobInstanceRepository,
                         workerRegistryRepository = workerRegistryRepository,
                         workerRemoteService = workerRemoteService,
                         applicationEventPublisher = applicationEventPublisher,
                         transactionTemplate = transactionTemplate,
+                        serverAddressHolder = serverAddressHolder,
                     )
                     return@withTimers jobDispatcherActor
                 }
@@ -93,13 +105,14 @@ class TaskDispatcherActor(
 
     override fun createReceive(): Receive<Command> {
         return newReceiveBuilder()
-            .onMessageEquals(Command.DispatchJobs) { this.handleDispatchTask() }
+            .onMessageEquals(Command.DispatchJobTask) { this.handleDispatchJobTask() }
+            .onMessageEquals(Command.DispatchWorkflowTask) { this.handleDispatchWorkflowTask() }
             .build()
     }
 
-    private fun handleDispatchTask(): Behavior<Command> {
+    private fun handleDispatchJobTask(): Behavior<Command> {
         var pageNo = 1
-        val currentServerAddress = context.system.hostPort()
+        val currentServerAddress = serverAddressHolder.address
         do {
             val pageQuery = PageQuery(pageNo = pageNo++, pageSize = 200)
             val assignedJobIdPage = jobInfoRepository.listIdsByEnabledAndSchedulerAddress(
@@ -107,21 +120,48 @@ class TaskDispatcherActor(
                 schedulerAddress = currentServerAddress,
                 pageQuery = pageQuery,
             )
-            val assignedJobInfos = assignedJobIdPage.content
-            if (assignedJobInfos.isEmpty()) {
+            val jobIds = assignedJobIdPage.content
+            if (jobIds.isEmpty()) {
                 continue
             }
-            dispatchByJobIds(assignedJobInfos)
+            dispatch(
+                sourceIds = jobIds.map { it.toSourceId() },
+                sourceType = JobSourceTypeEnum.JOB
+            )
             pageNo++
         } while (assignedJobIdPage.isNotEmpty())
         return this
     }
 
-    private fun dispatchByJobIds(assignedJobInfos: List<JobId>) {
+    private fun handleDispatchWorkflowTask(): Behavior<Command> {
+        var pageNo = 1
+        val currentServerAddress = serverAddressHolder.address
+        do {
+            val pageQuery = PageQuery(pageNo = pageNo++, pageSize = 200)
+            val assignedJobIdPage = workflowRepository.listIdsByEnabledAndSchedulerAddress(
+                enabled = null,
+                schedulerAddress = currentServerAddress,
+                pageQuery = pageQuery,
+            )
+            val workflowIds = assignedJobIdPage.content
+            if (workflowIds.isEmpty()) {
+                continue
+            }
+            dispatch(
+                sourceIds = workflowIds.map { it.toSourceId() },
+                sourceType = JobSourceTypeEnum.WORKFLOW
+            )
+            pageNo++
+        } while (assignedJobIdPage.isNotEmpty())
+        return this
+    }
+
+    private fun dispatch(sourceIds: List<SourceId>, sourceType: JobSourceTypeEnum) {
         var pageNo = 1
         do {
             val dispatchablePage = taskRepository.listDispatchable(
-                jobIds = assignedJobInfos,
+                sourceIds = sourceIds,
+                sourceType = sourceType,
                 pageQuery = PageQuery(pageNo = pageNo++, pageSize = 200)
             )
             val dispatchableJobInstanceList = dispatchablePage.content
@@ -179,7 +219,7 @@ class TaskDispatcherActor(
 
         val targetWorker = selectWorker(task, jobInstance, candidateWorkers)
         task.workerAddress = targetWorker
-        task.schedulerAddress = context.system.hostPort()
+        task.schedulerAddress = serverAddressHolder.address
         task.taskStatus = JobStatusEnum.DISPATCHING
         transactionTemplate.executeWithoutResult {
             taskRepository.save(task)

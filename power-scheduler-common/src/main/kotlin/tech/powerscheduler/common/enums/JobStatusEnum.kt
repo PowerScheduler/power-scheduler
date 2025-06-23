@@ -19,7 +19,7 @@ enum class JobStatusEnum(
     WAITING_SCHEDULE("待调度"),
 
     /**
-     * 待分发
+     * 待分发(给task用)
      */
     WAITING_DISPATCH("待分发"),
 
@@ -79,6 +79,7 @@ enum class JobStatusEnum(
             SUCCESS,
             FAILED,
             CANCELED,
+            UNKNOWN,
         )
     }
 }

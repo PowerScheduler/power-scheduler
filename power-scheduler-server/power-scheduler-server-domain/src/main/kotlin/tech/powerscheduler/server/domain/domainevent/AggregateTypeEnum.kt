@@ -6,5 +6,7 @@ package tech.powerscheduler.server.domain.domainevent
  */
 enum class AggregateTypeEnum {
     JOB_INSTANCE,
+
+    WORKFLOW_INSTANCE,
     ;
 }

@@ -62,6 +62,6 @@ interface JobInfoJpaRepository :
             AND t.schedulerAddress = :schedulerAddress
     """
     )
-    fun clearSchedulerAddress(schedulerAddress: String)
+    fun clearSchedulerByAddress(schedulerAddress: String)
 
 }

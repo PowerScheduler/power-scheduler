@@ -1,10 +1,11 @@
 package tech.powerscheduler.server.domain.task
 
+import tech.powerscheduler.common.enums.JobSourceTypeEnum
 import tech.powerscheduler.common.enums.TaskTypeEnum
 import tech.powerscheduler.server.domain.common.Page
 import tech.powerscheduler.server.domain.common.PageQuery
-import tech.powerscheduler.server.domain.job.JobId
 import tech.powerscheduler.server.domain.job.JobInstanceId
+import tech.powerscheduler.server.domain.job.SourceId
 
 /**
  * @author grayrat
@@ -31,7 +32,8 @@ interface TaskRepository {
     ): List<Task>
 
     fun listDispatchable(
-        jobIds: Iterable<JobId>,
+        sourceIds: Iterable<SourceId>,
+        sourceType: JobSourceTypeEnum,
         pageQuery: PageQuery
     ): Page<Task>
 

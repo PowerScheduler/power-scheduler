@@ -85,7 +85,6 @@ class TaskExecutorService(
             priority = command.priority
         )
         val taskProgressEntity = TaskProgressEntity().also {
-            it.jobId = command.jobId
             it.jobInstanceId = command.jobInstanceId!!
             it.taskId = command.taskId
         }
@@ -132,7 +131,6 @@ class TaskExecutorService(
             }
         }
         taskContext.also {
-            it.jobId = command.jobId!!
             it.jobInstanceId = command.jobInstanceId!!
             it.taskId = command.taskId
             it.taskName = command.taskName

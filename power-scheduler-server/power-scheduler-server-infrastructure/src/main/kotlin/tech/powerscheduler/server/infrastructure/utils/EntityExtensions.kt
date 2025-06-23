@@ -5,10 +5,7 @@ import tech.powerscheduler.server.domain.appgroup.AppGroupId
 import tech.powerscheduler.server.domain.common.Page
 import tech.powerscheduler.server.domain.domainevent.DomainEvent
 import tech.powerscheduler.server.domain.domainevent.DomainEventId
-import tech.powerscheduler.server.domain.job.JobId
-import tech.powerscheduler.server.domain.job.JobInfo
-import tech.powerscheduler.server.domain.job.JobInstance
-import tech.powerscheduler.server.domain.job.JobInstanceId
+import tech.powerscheduler.server.domain.job.*
 import tech.powerscheduler.server.domain.namespace.Namespace
 import tech.powerscheduler.server.domain.namespace.NamespaceId
 import tech.powerscheduler.server.domain.task.Task
@@ -144,7 +141,10 @@ fun JobInstance.toEntity(): JobInstanceEntity {
     return JobInstanceEntity().also {
         it.appGroupEntity = this.appGroup?.toEntity()
         it.id = this.id?.value
-        it.jobId = this.jobId?.value
+        it.sourceId = this.sourceId?.value
+        it.sourceType = this.sourceType
+        it.workflowInstanceCode = this.workflowInstanceCode
+        it.workflowNodeInstanceCode = this.workflowNodeInstanceCode
         it.workerAddress = this.workerAddress
         it.schedulerAddress = this.schedulerAddress
         it.jobName = this.jobName
@@ -173,7 +173,10 @@ fun JobInstanceEntity.toDomainModel(): JobInstance {
     return JobInstance().also {
         it.appGroup = this.appGroupEntity?.toDomainModel()
         it.id = JobInstanceId(this.id!!)
-        it.jobId = JobId(this.jobId!!)
+        it.sourceId = SourceId(this.sourceId!!)
+        it.sourceType = this.sourceType
+        it.workflowInstanceCode = this.workflowInstanceCode
+        it.workflowNodeInstanceCode = this.workflowNodeInstanceCode
         it.workerAddress = this.workerAddress
         it.schedulerAddress = this.schedulerAddress
         it.jobName = this.jobName
@@ -233,7 +236,8 @@ fun Task.toEntity(): TaskEntity {
         it.appGroupEntity = this.appGroup!!.toEntity()
         it.id = this.id?.value
         it.parentId = this.parentId?.value
-        it.jobId = this.jobId!!.value
+        it.sourceId = this.sourceId!!.value
+        it.sourceType = this.sourceType
         it.jobInstanceId = this.jobInstanceId!!.value
         it.schedulerAddress = this.schedulerAddress
         it.workerAddress = this.workerAddress
@@ -265,7 +269,8 @@ fun TaskEntity.toDomainModel(): Task {
         it.appGroup = this.appGroupEntity?.toDomainModel()
         it.id = TaskId(this.id!!)
         it.parentId = this.parentId?.let { parentId -> TaskId(parentId) }
-        it.jobId = JobId(this.jobId!!)
+        it.sourceId = SourceId(this.sourceId!!)
+        it.sourceType = this.sourceType
         it.jobInstanceId = JobInstanceId(this.jobInstanceId!!)
         it.schedulerAddress = this.schedulerAddress
         it.workerAddress = this.workerAddress

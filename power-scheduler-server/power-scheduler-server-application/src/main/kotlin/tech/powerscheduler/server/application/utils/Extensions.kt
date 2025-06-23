@@ -78,3 +78,13 @@ fun RetentionPolicyEnum?.toDTO(): RetentionPolicyDTO {
         label = this.label,
     )
 }
+
+fun WorkflowStatusEnum?.toDTO(): WorkflowStatusDTO {
+    if (this == null) {
+        return WorkflowStatusDTO()
+    }
+    return WorkflowStatusDTO(
+        code = this.code,
+        label = this.label,
+    )
+}

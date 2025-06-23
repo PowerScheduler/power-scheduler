@@ -12,7 +12,7 @@ import java.time.LocalDateTime
 @Table(
     name = "task",
     indexes = [
-        Index(name = "task_idx_job_id", columnList = "job_id"),
+        Index(name = "task_idx_source_id", columnList = "source_id"),
         Index(name = "task_idx_job_instance_id", columnList = "job_instance_id"),
         Index(name = "task_idx_worker_address", columnList = "worker_address"),
     ]
@@ -38,10 +38,17 @@ class TaskEntity : BaseEntity() {
     var parentId: Long? = null
 
     /**
-     * 任务id
+     * 任务来源对象的id(JobId 或者 WorkflowId)
      */
-    @Column(name = "job_id", nullable = false, updatable = false)
-    var jobId: Long? = null
+    @Column(name = "source_id", nullable = false, updatable = false)
+    var sourceId: Long? = null
+
+    /**
+     * 任务来源
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "source_type", nullable = false, updatable = false)
+    var sourceType: JobSourceTypeEnum? = null
 
     /**
      * 任务实例id
