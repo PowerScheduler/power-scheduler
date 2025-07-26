@@ -3,10 +3,18 @@ FROM eclipse-temurin:21-jre
 WORKDIR /app
 
 ENV TZ=Asia/Shanghai
-ENV JVM_OPTIONS="\
+ENV JVM_OPTIONS=" \
+-Xms1024m \
+-Xmx1024m \
+-XX:+UseG1GC \
+-XX:MaxGCPauseMillis=200 \
+-XX:+AlwaysPreTouch \
+-XX:+ExitOnOutOfMemoryError \
 -XX:+HeapDumpOnOutOfMemoryError \
 -XX:HeapDumpPath=/app/dump \
--Xlog:gc*,safepoint:file=/app/logs/gc.log:time,level,tags \
+-XX:NativeMemoryTracking=summary \
+-Xlog:gc*,gc+heap=debug:file=/app/logs/jvm_gc.log:time,uptime,level,tags:filecount=5,filesize=10M \
+-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005 \
 "
 ENV ARGS=""
 
