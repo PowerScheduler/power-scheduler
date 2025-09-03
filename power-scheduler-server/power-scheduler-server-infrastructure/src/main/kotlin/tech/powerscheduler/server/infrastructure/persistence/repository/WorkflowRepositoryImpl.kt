@@ -64,6 +64,11 @@ class WorkflowRepositoryImpl(
         return entity?.toDomainModel()
     }
 
+    override fun findAllByIds(ids: Iterable<WorkflowId>): List<Workflow> {
+        val list = workflowJpaRepository.findAllById(ids.map { it.value })
+        return list.map { it.toDomainModel() }
+    }
+
     override fun pageQuery(query: WorkflowQuery): Page<Workflow> {
         val pageable = PageRequest.of(
             query.pageNo - 1,

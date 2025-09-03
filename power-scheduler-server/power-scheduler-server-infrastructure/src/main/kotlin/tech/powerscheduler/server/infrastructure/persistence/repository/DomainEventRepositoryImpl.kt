@@ -44,16 +44,12 @@ class DomainEventRepositoryImpl(
         return DomainEventId(entity.id!!)
     }
 
-    override fun deleteByJobInstanceId(jobInstance: JobInstanceId) {
-        domainEventJpaRepository.deleteByAggregateIdAndAggregateType(
-            aggregateId = jobInstance.toString(),
-            aggregateType = AggregateTypeEnum.JOB_INSTANCE,
-        )
-    }
-
     override fun deleteByIds(ids: Iterable<DomainEventId>) {
         val ids = ids.map { it.value }
         domainEventJpaRepository.deleteAllByIdInBatch(ids)
     }
 
+    override fun deleteByEventStatus(status: DomainEventStatusEnum) {
+        domainEventJpaRepository.deleteByEventStatus(status)
+    }
 }

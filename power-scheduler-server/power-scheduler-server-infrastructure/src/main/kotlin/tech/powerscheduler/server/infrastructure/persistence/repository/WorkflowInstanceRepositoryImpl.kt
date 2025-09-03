@@ -8,6 +8,7 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Repository
 import tech.powerscheduler.common.enums.WorkflowStatusEnum
 import tech.powerscheduler.server.domain.common.Page
+import tech.powerscheduler.server.domain.common.PageQuery
 import tech.powerscheduler.server.domain.workflow.*
 import tech.powerscheduler.server.infrastructure.persistence.model.AppGroupEntity
 import tech.powerscheduler.server.infrastructure.persistence.model.JobInstanceEntity
@@ -17,6 +18,7 @@ import tech.powerscheduler.server.infrastructure.persistence.repository.impl.Wor
 import tech.powerscheduler.server.infrastructure.utils.toDomainModel
 import tech.powerscheduler.server.infrastructure.utils.toDomainPage
 import tech.powerscheduler.server.infrastructure.utils.toEntity
+import java.time.LocalDateTime
 
 /**
  * @author grayrat
@@ -102,5 +104,48 @@ class WorkflowInstanceRepositoryImpl(
         val entity = workflowInstance.toEntity()
         workflowInstanceJpaRepository.save(entity)
         return WorkflowInstanceId(entity.id!!)
+    }
+
+    override fun findAllByWorkflowIdAndStatus(
+        workflowId: WorkflowId,
+        statuses: Set<WorkflowStatusEnum>,
+        pageQuery: PageQuery
+    ): Page<WorkflowInstance> {
+        val pageable = PageRequest.of(
+            pageQuery.pageNo - 1,
+            pageQuery.pageSize,
+            Sort.by(WorkflowInstanceEntity::id.name).ascending()
+        )
+        val page = workflowInstanceJpaRepository.findAllByWorkflowIdAndStatusIn(
+            workflowId = workflowId,
+            statuses = statuses,
+            pageable = pageable,
+        )
+        return page.map { it.toDomainModel() }.toDomainPage()
+    }
+
+    override fun findAllByWorkflowIdAndStatusAndEndAtBefore(
+        workflowId: WorkflowId,
+        statuses: Set<WorkflowStatusEnum>,
+        endAt: LocalDateTime,
+        pageQuery: PageQuery
+    ): Page<WorkflowInstance> {
+        val pageable = PageRequest.of(
+            pageQuery.pageNo - 1,
+            pageQuery.pageSize,
+            Sort.by(WorkflowInstanceEntity::id.name).ascending()
+        )
+        val page = workflowInstanceJpaRepository.findAllByWorkflowIdAndStatusInAndEndAtBefore(
+            workflowId = workflowId,
+            statuses = statuses,
+            endAt = endAt,
+            pageable = pageable,
+        )
+        return page.map { it.toDomainModel() }.toDomainPage()
+    }
+
+    override fun deleteAll(workflowInstances: Iterable<WorkflowInstance>) {
+        val ids = workflowInstances.map { it.id!!.value }
+        workflowInstanceJpaRepository.deleteAllById(ids)
     }
 }

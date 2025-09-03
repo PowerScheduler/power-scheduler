@@ -18,6 +18,8 @@ interface WorkflowRepository {
 
     fun findById(workflowId: WorkflowId): Workflow?
 
+    fun findAllByIds(ids: Iterable<WorkflowId>): List<Workflow>
+
     fun pageQuery(query: WorkflowQuery): Page<Workflow>
 
     fun findSchedulableByIds(ids: List<WorkflowId>, baseTime: LocalDateTime): List<Workflow>

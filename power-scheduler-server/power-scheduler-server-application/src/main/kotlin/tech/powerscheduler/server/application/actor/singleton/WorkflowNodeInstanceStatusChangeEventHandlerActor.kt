@@ -94,7 +94,6 @@ class WorkflowNodeInstanceStatusChangeEventHandlerActor(
                 val domainEventIdsToDelete = events.mapNotNull { it.id }.filterNot { it.value == firstEvent.id!!.value }
                 domainEventRepository.deleteByIds(domainEventIdsToDelete)
                 try {
-                    firstEvent.eventStatus = DomainEventStatusEnum.PROCESSING
                     domainEventRepository.save(firstEvent)
                     val event = JSON.readValue<WorkflowNodeInstanceStatusChangeEvent>(firstEvent.body)!!
                     doHandleEvent(event)

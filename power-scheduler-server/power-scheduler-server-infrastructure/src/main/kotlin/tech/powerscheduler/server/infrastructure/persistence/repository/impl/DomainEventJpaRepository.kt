@@ -24,6 +24,6 @@ interface DomainEventJpaRepository
         pageable: Pageable,
     ): Page<DomainEventEntity>
 
-    fun deleteByAggregateIdAndAggregateType(aggregateId: String, aggregateType: AggregateTypeEnum)
+    fun deleteByEventStatus(status: DomainEventStatusEnum)
 
 }

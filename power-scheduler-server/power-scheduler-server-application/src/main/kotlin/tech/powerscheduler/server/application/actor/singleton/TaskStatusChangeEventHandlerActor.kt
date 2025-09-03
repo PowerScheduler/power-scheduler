@@ -102,7 +102,6 @@ class TaskStatusChangeEventHandlerActor(
                 val domainEventIdsToDelete = events.mapNotNull { it.id }.filterNot { it.value == firstEvent.id!!.value }
                 domainEventRepository.deleteByIds(domainEventIdsToDelete)
                 try {
-                    firstEvent.eventStatus = DomainEventStatusEnum.PROCESSING
                     domainEventRepository.save(firstEvent)
                     val event = JSON.readValue<TaskStatusChangeEvent>(firstEvent.body)!!
                     doHandleEvent(event)

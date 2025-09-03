@@ -17,8 +17,8 @@ interface DomainEventRepository {
 
     fun save(domainEvent: DomainEvent): DomainEventId
 
-    fun deleteByJobInstanceId(jobInstance: JobInstanceId)
-
     fun deleteByIds(ids: Iterable<DomainEventId>)
+
+    fun deleteByEventStatus(status: DomainEventStatusEnum)
 
 }

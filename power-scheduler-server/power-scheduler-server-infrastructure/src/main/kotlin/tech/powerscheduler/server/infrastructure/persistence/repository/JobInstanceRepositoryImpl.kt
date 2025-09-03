@@ -136,8 +136,9 @@ class JobInstanceRepositoryImpl(
             pageQuery.pageSize,
             Sort.by(JobInstanceEntity::id.name).ascending()
         )
-        val page = jobInstanceJpaRepository.listIdBySourceIdAndJobStatus(
+        val page = jobInstanceJpaRepository.listIdBySourceIdAndSourceTypeAndJobStatus(
             sourceId = jobId.value,
+            sourceType = JobSourceTypeEnum.JOB,
             jobStatuses = jobStatuses,
             pageable = pageable,
         )
@@ -163,6 +164,11 @@ class JobInstanceRepositoryImpl(
             pageable = pageable,
         )
         return page.map { JobInstanceId(it) }.toDomainPage()
+    }
+
+    override fun listIdByWorkflowInstanceCodes(workflowInstanceCodes: List<String>): List<JobInstanceId> {
+        val ids = jobInstanceJpaRepository.listIdByWorkflowInstanceCodes(workflowInstanceCodes)
+        return ids.map { JobInstanceId(it) }
     }
 
     override fun listDispatchable(

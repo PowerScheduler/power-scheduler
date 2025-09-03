@@ -6,7 +6,6 @@ package tech.powerscheduler.server.domain.domainevent
  */
 enum class DomainEventStatusEnum {
     PENDING,
-    PROCESSING,
     SUCCESS,
     FAILED,
     ;

@@ -77,6 +77,15 @@ interface JobInstanceRepository {
     ): Page<JobInstanceId>
 
     /**
+     * 根据 工作流实例编码列表 查询符合条件的任务实例id列表
+     * 用途: 清理过期的任务实例
+     *
+     * @param workflowInstanceCodes 工作流实例编码列表
+     * @return
+     */
+    fun listIdByWorkflowInstanceCodes(workflowInstanceCodes: List<String>): List<JobInstanceId>
+
+    /**
      * 根据 任务来源, 任务来源对象id 分页查询可分发给worker的任务实例
      * 用途: 1. 常规任务实例分发 2. 工作流节点任务实例分发
      *

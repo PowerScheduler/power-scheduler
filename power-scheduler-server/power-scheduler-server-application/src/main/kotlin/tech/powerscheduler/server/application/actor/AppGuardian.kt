@@ -91,8 +91,8 @@ class AppGuardian(
                 .let { singleton.init(it) }
 
             SingletonActor.of(
-                JobInstanceCleanActor.create(applicationContext = applicationContext),
-                JobInstanceCleanActor::class.simpleName,
+                SystemCleanupActor.create(applicationContext = applicationContext),
+                SystemCleanupActor::class.simpleName,
             )
                 .withProps(Props.empty().withDispatcherFromConfig("job-instance-clean-dispatcher"))
                 .let { singleton.init(it) }

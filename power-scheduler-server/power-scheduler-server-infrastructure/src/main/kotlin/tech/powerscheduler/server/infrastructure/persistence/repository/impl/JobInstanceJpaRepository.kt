@@ -70,13 +70,15 @@ interface JobInstanceJpaRepository :
         FROM JobInstanceEntity AS jobInstance
         WHERE true 
           AND jobInstance.sourceId = :sourceId 
+          AND jobInstance.sourceType = :sourceType
           AND jobInstance.jobStatus IN :jobStatuses
     """
     )
-    fun listIdBySourceIdAndJobStatus(
+    fun listIdBySourceIdAndSourceTypeAndJobStatus(
         sourceId: Long,
+        sourceType: JobSourceTypeEnum,
         jobStatuses: Iterable<JobStatusEnum>,
-        pageable: Pageable
+        pageable: Pageable,
     ): Page<Long>
 
     @Query(
@@ -116,5 +118,16 @@ interface JobInstanceJpaRepository :
         jobStatuses: Iterable<JobStatusEnum>,
         pageRequest: Pageable,
     ): Page<Long>
+
+    @Query(
+        """
+        SELECT 
+            jobInstance.id
+        FROM JobInstanceEntity AS jobInstance
+        WHERE true 
+          AND jobInstance.workflowInstanceCode IN :workflowInstanceCodes
+    """
+    )
+    fun listIdByWorkflowInstanceCodes(workflowInstanceCodes: List<String>): List<Long>
 
 }

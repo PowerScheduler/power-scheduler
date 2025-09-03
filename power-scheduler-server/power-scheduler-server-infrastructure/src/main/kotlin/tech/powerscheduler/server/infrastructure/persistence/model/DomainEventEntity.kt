@@ -12,7 +12,15 @@ import tech.powerscheduler.server.domain.domainevent.DomainEventTypeEnum
  * @since 2025/6/8
  */
 @Entity
-@Table(name = "domain_event")
+@Table(
+    name = "domain_event",
+    indexes = [
+        Index(
+            name = "domain_event_idx_event_type_event_status",
+            columnList = "event_type, event_status"
+        ),
+    ]
+)
 class DomainEventEntity : BaseEntity() {
 
     /**
