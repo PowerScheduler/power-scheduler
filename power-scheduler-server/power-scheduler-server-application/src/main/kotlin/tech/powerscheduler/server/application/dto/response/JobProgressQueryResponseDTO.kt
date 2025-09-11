@@ -25,7 +25,7 @@ class JobProgressQueryResponseDTO {
     /**
      * 子任务状态
      */
-    var taskStatus: JobStatusDTO? = null
+    var taskStatus: TaskStatusDTO? = null
 
     /**
      * 执行器地址

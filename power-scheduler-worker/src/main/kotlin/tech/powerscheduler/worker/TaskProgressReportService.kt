@@ -94,26 +94,26 @@ class TaskProgressReportService(
             log.warn("[Powerscheduler] reportProgress failed: no available server]")
             return
         }
-        val jobProgressList = TaskProgressRepository.listByTaskId(taskId)
-        val latestJobProgress = jobProgressList.sortedByDescending { it.id }.first()
+        val taskProgressList = TaskProgressRepository.listByTaskId(taskId)
+        val latestProgress = taskProgressList.sortedByDescending { it.id }.first()
         val param = TaskProgressReportRequestDTO().apply {
-            this.jobInstanceId = latestJobProgress.jobInstanceId
-            this.taskId = latestJobProgress.taskId
-            this.startAt = latestJobProgress.startAt
-            this.endAt = latestJobProgress.endAt
-            this.taskStatus = latestJobProgress.status
-            this.result = latestJobProgress.result
+            this.jobInstanceId = latestProgress.jobInstanceId
+            this.taskId = latestProgress.taskId
+            this.startAt = latestProgress.startAt
+            this.endAt = latestProgress.endAt
+            this.taskStatus = latestProgress.status
+            this.result = latestProgress.result
             this.accessToken = workerRegisterService.accessToken
-            this.subTaskBodyList = latestJobProgress.subTaskListBody
-            this.subTaskName = latestJobProgress.subTaskName
+            this.subTaskBodyList = latestProgress.subTaskListBody
+            this.subTaskName = latestProgress.subTaskName
         }
         val result = httpClient.reportProgress(baseUrl = serverUrl, param = param)
         if (result.success && result.data == true) {
             log.debug(
                 "[Powerscheduler] reportProgress successful: jobInstanceId={}, jobStatus={}",
-                taskId, latestJobProgress.status
+                taskId, latestProgress.status
             )
-            val ids = jobProgressList.mapNotNull { it.id }
+            val ids = taskProgressList.mapNotNull { it.id }
             TaskProgressRepository.deleteByIds(ids)
         } else {
             log.warn("[Powerscheduler] reportProgress failed: {}", result.message, result.cause)

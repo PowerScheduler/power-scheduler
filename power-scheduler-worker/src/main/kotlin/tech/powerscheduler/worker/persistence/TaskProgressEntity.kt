@@ -1,6 +1,6 @@
 package tech.powerscheduler.worker.persistence
 
-import tech.powerscheduler.common.enums.JobStatusEnum
+import tech.powerscheduler.common.enums.TaskStatusEnum
 import java.time.LocalDateTime
 
 /**
@@ -13,7 +13,7 @@ class TaskProgressEntity {
     var id: Long? = null
     var jobInstanceId: Long? = null
     var taskId: Long? = null
-    var status: JobStatusEnum? = null
+    var status: TaskStatusEnum? = null
     var startAt: LocalDateTime? = null
     var endAt: LocalDateTime? = null
     var result: String? = null

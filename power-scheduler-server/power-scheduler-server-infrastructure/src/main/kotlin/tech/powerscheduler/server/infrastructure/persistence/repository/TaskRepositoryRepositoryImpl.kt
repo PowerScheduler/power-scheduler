@@ -6,7 +6,7 @@ import org.springframework.data.jpa.domain.Specification
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Repository
 import tech.powerscheduler.common.enums.JobSourceTypeEnum
-import tech.powerscheduler.common.enums.JobStatusEnum
+import tech.powerscheduler.common.enums.TaskStatusEnum
 import tech.powerscheduler.common.enums.TaskTypeEnum
 import tech.powerscheduler.server.domain.common.Page
 import tech.powerscheduler.server.domain.common.PageQuery
@@ -90,7 +90,7 @@ class TaskRepositoryRepositoryImpl(
         val page = taskRepositoryJpaRepository.listDispatchable(
             sourceIds = sourceIds.map { it.value },
             sourceType = sourceType,
-            jobStatuses = listOf(JobStatusEnum.WAITING_DISPATCH),
+            taskStatuses = listOf(TaskStatusEnum.WAITING_DISPATCH),
             pageRequest = pageable,
         )
         return page.map { it.toDomainModel() }.toDomainPage()
@@ -102,7 +102,7 @@ class TaskRepositoryRepositoryImpl(
                 root.get<String>(TaskEntity::workerAddress.name), workerAddress
             )
             val taskStatusIn = root.get<String>(TaskEntity::taskStatus.name)
-                .`in`(JobStatusEnum.UNCOMPLETED_STATUSES)
+                .`in`(TaskStatusEnum.UNCOMPLETED_STATUSES)
             criteriaBuilder.and(workerAddressEqual, taskStatusIn)
         }
         val list = taskRepositoryJpaRepository.findAll(specification)

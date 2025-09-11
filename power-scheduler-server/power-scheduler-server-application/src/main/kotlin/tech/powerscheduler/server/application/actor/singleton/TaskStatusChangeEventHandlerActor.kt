@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.context.ApplicationContext
 import org.springframework.transaction.support.TransactionTemplate
 import tech.powerscheduler.common.enums.ExecuteModeEnum
-import tech.powerscheduler.common.enums.JobStatusEnum
+import tech.powerscheduler.common.enums.TaskStatusEnum
 import tech.powerscheduler.common.enums.TaskTypeEnum
 import tech.powerscheduler.server.application.service.JobInstanceService
 import tech.powerscheduler.server.application.utils.JSON
@@ -156,6 +156,6 @@ class TaskStatusChangeEventHandlerActor(
         if (allSubTaskList.isEmpty()) {
             return false
         }
-        return allSubTaskList.all { it.taskStatus == JobStatusEnum.SUCCESS }
+        return allSubTaskList.all { it.taskStatus == TaskStatusEnum.SUCCESS }
     }
 }

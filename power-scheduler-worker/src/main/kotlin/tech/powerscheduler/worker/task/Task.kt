@@ -1,7 +1,7 @@
 package tech.powerscheduler.worker.task
 
 import org.slf4j.LoggerFactory
-import tech.powerscheduler.common.enums.JobStatusEnum
+import tech.powerscheduler.common.enums.TaskStatusEnum
 import tech.powerscheduler.worker.exception.PowerSchedulerWorkerException
 import tech.powerscheduler.worker.persistence.TaskProgressEntity
 import tech.powerscheduler.worker.persistence.TaskProgressRepository
@@ -54,7 +54,7 @@ class Task(
     /**
      * 任务当前状态
      */
-    var jobStatus: JobStatusEnum = JobStatusEnum.PENDING
+    var jobStatus: TaskStatusEnum = TaskStatusEnum.PENDING
 
     /**
      * 任务开始时间
@@ -72,7 +72,7 @@ class Task(
     fun execute() {
         this.startAt = LocalDateTime.now()
         workerThread = Thread.currentThread()
-        updateProgress(jobStatus = JobStatusEnum.PROCESSING)
+        updateProgress(taskStatus = TaskStatusEnum.PROCESSING)
         try {
             if (terminated) {
                 throw PowerSchedulerWorkerException("[Powerscheduler] Job is terminated")
@@ -82,16 +82,16 @@ class Task(
             val processResult = processor.process(context)
             when (processResult) {
                 is ProcessResult.Success -> {
-                    updateProgress(jobStatus = JobStatusEnum.SUCCESS, result = processResult.result)
+                    updateProgress(taskStatus = TaskStatusEnum.SUCCESS, result = processResult.result)
                 }
 
                 is ProcessResult.Failure -> {
-                    updateProgress(jobStatus = JobStatusEnum.FAILED, result = processResult.message)
+                    updateProgress(taskStatus = TaskStatusEnum.FAILED, result = processResult.message)
                 }
 
                 is ProcessResult.Map -> {
                     updateProgress(
-                        jobStatus = JobStatusEnum.SUCCESS,
+                        taskStatus = TaskStatusEnum.SUCCESS,
                         subTaskList = processResult.taskList,
                         subTaskName = processResult.taskName,
                     )
@@ -101,15 +101,15 @@ class Task(
             }
         } catch (_: InterruptedException) {
             log.info("[Powerscheduler] execution of jobInstance [{}] is canceled", context.jobInstanceId)
-            updateProgress(jobStatus = JobStatusEnum.FAILED)
+            updateProgress(taskStatus = TaskStatusEnum.FAILED)
         } catch (e: PowerSchedulerWorkerException) {
             log.error(
                 "[Powerscheduler] Error while executing jobInstance [{}]: {}", context.jobInstanceId, e.message, e
             )
-            updateProgress(jobStatus = JobStatusEnum.FAILED, result = e.message)
+            updateProgress(taskStatus = TaskStatusEnum.FAILED, result = e.message)
         } catch (e: Throwable) {
             log.error("[Powerscheduler] Error while executing jobInstance [{}]", context.jobInstanceId, e)
-            updateProgress(jobStatus = JobStatusEnum.FAILED, result = e.stackTraceToString())
+            updateProgress(taskStatus = TaskStatusEnum.FAILED, result = e.stackTraceToString())
         }
     }
 
@@ -124,19 +124,19 @@ class Task(
     /**
      * 更新任务进度
      *
-     * @param jobStatus     任务状态
+     * @param taskStatus     任务状态
      * @param result        任务执行结果或者错误信息
      * @param subTaskList   子任务列表
      * @param subTaskName   子任务名称
      */
     private fun updateProgress(
-        jobStatus: JobStatusEnum,
+        taskStatus: TaskStatusEnum,
         result: Any? = null,
         subTaskList: Iterable<Any> = emptyList(),
         subTaskName: String = ""
     ) {
-        this.jobStatus = jobStatus
-        if (jobStatus in JobStatusEnum.COMPLETED_STATUSES) {
+        this.jobStatus = taskStatus
+        if (taskStatus in TaskStatusEnum.COMPLETED_STATUSES) {
             this.endAt = LocalDateTime.now()
         }
         val taskProgressEntity = TaskProgressEntity().also {

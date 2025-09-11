@@ -9,7 +9,7 @@ import org.springframework.data.jpa.repository.Lock
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
 import tech.powerscheduler.common.enums.JobSourceTypeEnum
-import tech.powerscheduler.common.enums.JobStatusEnum
+import tech.powerscheduler.common.enums.TaskStatusEnum
 import tech.powerscheduler.common.enums.TaskTypeEnum
 import tech.powerscheduler.server.infrastructure.persistence.model.TaskEntity
 
@@ -44,13 +44,13 @@ interface TaskRepositoryJpaRepository
         WHERE true 
           AND task.sourceId IN :sourceIds 
           AND task.sourceType = :sourceType 
-          AND task.taskStatus IN :jobStatuses
+          AND task.taskStatus IN :taskStatuses
     """
     )
     fun listDispatchable(
         sourceIds: Iterable<Long>,
         sourceType: JobSourceTypeEnum,
-        jobStatuses: Iterable<JobStatusEnum>,
+        taskStatuses: Iterable<TaskStatusEnum>,
         pageRequest: Pageable
     ): Page<TaskEntity>
 

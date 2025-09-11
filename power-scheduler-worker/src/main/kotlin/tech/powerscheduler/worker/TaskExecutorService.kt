@@ -6,8 +6,8 @@ import tech.powerscheduler.common.dto.request.JobDispatchRequestDTO
 import tech.powerscheduler.common.dto.request.JobTerminateRequestDTO
 import tech.powerscheduler.common.dto.response.PageDTO
 import tech.powerscheduler.common.enums.ExecuteModeEnum.*
-import tech.powerscheduler.common.enums.JobStatusEnum
 import tech.powerscheduler.common.enums.JobTypeEnum
+import tech.powerscheduler.common.enums.TaskStatusEnum
 import tech.powerscheduler.common.enums.TaskTypeEnum.REDUCE
 import tech.powerscheduler.worker.persistence.TaskProgressEntity
 import tech.powerscheduler.worker.persistence.TaskProgressRepository
@@ -93,12 +93,12 @@ class TaskExecutorService(
             taskProgressEntity.also {
                 it.startAt = LocalDateTime.now()
                 it.startAt = LocalDateTime.now()
-                it.status = JobStatusEnum.FAILED
+                it.status = TaskStatusEnum.FAILED
                 it.result = "job queue is full"
             }
         } else {
             taskRegistry.put(command.jobInstanceId!!, task)
-            taskProgressEntity.status = JobStatusEnum.PENDING
+            taskProgressEntity.status = TaskStatusEnum.PENDING
         }
         TaskProgressRepository.save(taskProgressEntity)
     }

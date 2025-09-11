@@ -75,7 +75,7 @@ class JobInstanceService(
         val jobInstance = jobInstanceRepository.findById(JobInstanceId(jobInstanceId))
             ?: throw BizException(message = "终止任务失败: 任务实例不存在")
         when (jobInstance.jobStatus!!) {
-            WAITING_SCHEDULE, WAITING_DISPATCH, DISPATCHING, PENDING, PROCESSING -> {
+            WAITING_SCHEDULE, WAITING_DISPATCH, PENDING, PROCESSING -> {
                 jobInstance.terminate()
                 jobInstanceRepository.save(jobInstance)
                 val terminatedEvent = JobInstanceTerminatedEvent(
@@ -84,8 +84,7 @@ class JobInstanceService(
                 applicationEventPublisher.publishEvent(terminatedEvent)
             }
 
-            FAILED, SUCCESS, CANCELED -> throw BizException("终止任务失败: 任务已经完成")
-            UNKNOWN -> throw BizException("出现未知状态")
+            FAILED, SUCCESS -> throw BizException("终止任务失败: 任务已经完成")
         }
     }
 

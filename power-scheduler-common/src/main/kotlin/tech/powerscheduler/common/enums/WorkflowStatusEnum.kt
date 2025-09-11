@@ -34,11 +34,6 @@ enum class WorkflowStatusEnum(
      * 取消
      */
     CANCELED("取消"),
-
-    /**
-     * 未知(如果出现没有考虑到的分支, 则使用此状态兜底)
-     */
-    UNKNOWN("未知");
     ;
 
     override val code = this.name
@@ -47,13 +42,10 @@ enum class WorkflowStatusEnum(
         fun from(jobStatusEnum: JobStatusEnum): WorkflowStatusEnum {
             return when (jobStatusEnum) {
                 JobStatusEnum.WAITING_SCHEDULE, JobStatusEnum.WAITING_DISPATCH,
-                JobStatusEnum.DISPATCHING, JobStatusEnum.PENDING, JobStatusEnum.PROCESSING -> RUNNING
+                JobStatusEnum.PENDING, JobStatusEnum.PROCESSING -> RUNNING
 
-                JobStatusEnum.FAILED, JobStatusEnum.UNKNOWN -> FAILED
-
+                JobStatusEnum.FAILED -> FAILED
                 JobStatusEnum.SUCCESS -> SUCCESS
-
-                JobStatusEnum.CANCELED -> CANCELED
             }
         }
 
@@ -72,7 +64,6 @@ enum class WorkflowStatusEnum(
             SUCCESS,
             FAILED,
             CANCELED,
-            UNKNOWN,
         )
     }
 }

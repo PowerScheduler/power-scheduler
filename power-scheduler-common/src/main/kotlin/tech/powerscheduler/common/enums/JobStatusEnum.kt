@@ -19,14 +19,9 @@ enum class JobStatusEnum(
     WAITING_SCHEDULE("待调度"),
 
     /**
-     * 待分发(给task用)
+     * 待分发
      */
     WAITING_DISPATCH("待分发"),
-
-    /**
-     * 分发中
-     */
-    DISPATCHING("分发中"),
 
     /**
      * 排队中
@@ -47,16 +42,6 @@ enum class JobStatusEnum(
      * 成功
      */
     SUCCESS("成功"),
-
-    /**
-     * 取消
-     */
-    CANCELED("取消"),
-
-    /**
-     * 未知(如果出现没有考虑到的分支, 则使用此状态兜底)
-     */
-    UNKNOWN("未知");
     ;
 
     override val code = this.name
@@ -78,8 +63,16 @@ enum class JobStatusEnum(
         val COMPLETED_STATUSES = setOf(
             SUCCESS,
             FAILED,
-            CANCELED,
-            UNKNOWN,
         )
+
+        fun from(taskStatusEnum: TaskStatusEnum): JobStatusEnum {
+            return when (taskStatusEnum) {
+                TaskStatusEnum.WAITING_DISPATCH -> WAITING_DISPATCH
+                TaskStatusEnum.DISPATCHING, TaskStatusEnum.PENDING -> PENDING
+                TaskStatusEnum.PROCESSING -> PROCESSING
+                TaskStatusEnum.FAILED -> FAILED
+                TaskStatusEnum.SUCCESS -> SUCCESS
+            }
+        }
     }
 }

@@ -66,7 +66,7 @@ class Task {
     /**
      * 任务状态
      */
-    var taskStatus: JobStatusEnum? = null
+    var taskStatus: TaskStatusEnum? = null
 
     /**
      * 调度时间
@@ -167,17 +167,17 @@ class Task {
         get() = this.attemptCnt!! < this.maxAttemptCnt!!
 
     val isCompleted
-        get() = JobStatusEnum.COMPLETED_STATUSES.contains(this.taskStatus)
+        get() = TaskStatusEnum.COMPLETED_STATUSES.contains(this.taskStatus)
 
     fun markFailed(message: String? = null) {
         this.startAt = this.startAt ?: LocalDateTime.now()
         this.endAt = LocalDateTime.now()
-        this.taskStatus = JobStatusEnum.FAILED
+        this.taskStatus = TaskStatusEnum.FAILED
         this.result = message?.take(2000)
     }
 
     fun resetStatusForReattempt() {
-        this.taskStatus = JobStatusEnum.WAITING_DISPATCH
+        this.taskStatus = TaskStatusEnum.WAITING_DISPATCH
         this.startAt = null
         this.endAt = null
         this.scheduleAt = LocalDateTime.now().plusSeconds(this.attemptInterval?.toLong() ?: 15)
@@ -191,7 +191,7 @@ class Task {
         if (this.endAt == null) {
             this.endAt = LocalDateTime.now()
         }
-        this.taskStatus = JobStatusEnum.CANCELED
+        this.taskStatus = TaskStatusEnum.FAILED
     }
 
     fun createSubTask(subTaskBodyList: List<String>, subTaskName: String): List<Task> {
@@ -205,7 +205,7 @@ class Task {
                 it.taskName = subTaskName
                 it.jobType = this.jobType
                 it.processor = this.processor
-                it.taskStatus = JobStatusEnum.WAITING_DISPATCH
+                it.taskStatus = TaskStatusEnum.WAITING_DISPATCH
                 it.scheduleAt = LocalDateTime.now()
                 it.executeParams = this.executeParams
                 it.executeMode = this.executeMode
@@ -231,7 +231,7 @@ class Task {
             it.taskName = "REDUCE_TASK"
             it.jobType = this.jobType
             it.processor = this.processor
-            it.taskStatus = JobStatusEnum.WAITING_DISPATCH
+            it.taskStatus = TaskStatusEnum.WAITING_DISPATCH
             it.scheduleAt = LocalDateTime.now()
             it.executeParams = this.executeParams
             it.executeMode = this.executeMode

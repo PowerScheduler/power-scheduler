@@ -268,7 +268,7 @@ class JobInstance {
             it.taskName = this.jobName
             it.jobType = this.jobType
             it.processor = this.processor
-            it.taskStatus = JobStatusEnum.WAITING_DISPATCH
+            it.taskStatus = TaskStatusEnum.WAITING_DISPATCH
             it.scheduleAt = this.scheduleAt
             it.executeParams = this.executeParams
             it.executeMode = this.executeMode
@@ -339,28 +339,28 @@ class JobInstance {
         }
         val maxBatch = tasks.maxOfOrNull { it.batch!! }
         return when (this.executeMode!!) {
-            SINGLE -> tasks.first { it.batch == maxBatch }.taskStatus!!
+            SINGLE -> {
+                val taskStatus = tasks.first { it.batch == maxBatch }.taskStatus!!
+                JobStatusEnum.from(taskStatus)
+            }
 
             BROADCAST, MAP, MAP_REDUCE -> {
                 val currentTasks = tasks.filter { it.batch == maxBatch }
-                val jobStatusSet = currentTasks.map { it.taskStatus!! }.toSet()
+                val taskStatusSet = currentTasks.map { it.taskStatus!! }.toSet()
                 // 如果全部任务都已经完成, 则设置成功或者失败状态
-                if ((jobStatusSet - JobStatusEnum.COMPLETED_STATUSES).isEmpty()) {
-                    if (jobStatusSet.all { it == JobStatusEnum.SUCCESS }) {
-                        return JobStatusEnum.SUCCESS
+                if ((taskStatusSet - TaskStatusEnum.COMPLETED_STATUSES).isEmpty()) {
+                    if (taskStatusSet.all { it == TaskStatusEnum.SUCCESS }) {
+                        JobStatusEnum.SUCCESS
+                    } else {
+                        JobStatusEnum.FAILED
                     }
-                    if (jobStatusSet.any { it == JobStatusEnum.FAILED }) {
-                        return JobStatusEnum.FAILED
-                    }
-                    // 取消状态的任务不会走到这里, 留个未知状态兜底
-                    return JobStatusEnum.UNKNOWN
                 } else {
-                    return if (jobStatusSet.intersect(JobStatusEnum.COMPLETED_STATUSES).isNotEmpty()) {
+                    if (taskStatusSet.intersect(TaskStatusEnum.COMPLETED_STATUSES).isNotEmpty()) {
                         // 如果部分完成, 则设置为执行中
                         JobStatusEnum.PROCESSING
                     } else {
                         // 如果没有任何完成状态的, 则取最大的状态
-                        jobStatusSet.maxBy { it.ordinal }
+                        JobStatusEnum.from(taskStatusSet.maxBy { it.ordinal })
                     }
                 }
             }
@@ -397,6 +397,6 @@ class JobInstance {
         if (this.endAt == null) {
             this.endAt = LocalDateTime.now()
         }
-        this.jobStatus = JobStatusEnum.CANCELED
+        this.jobStatus = JobStatusEnum.FAILED
     }
 }

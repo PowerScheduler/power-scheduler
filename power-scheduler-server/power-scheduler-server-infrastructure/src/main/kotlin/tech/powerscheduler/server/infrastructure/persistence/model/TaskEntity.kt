@@ -92,7 +92,7 @@ class TaskEntity : BaseEntity() {
      */
     @Enumerated(EnumType.STRING)
     @Column(name = "task_status", nullable = false)
-    var taskStatus: JobStatusEnum? = null
+    var taskStatus: TaskStatusEnum? = null
 
     /**
      * 触发时间

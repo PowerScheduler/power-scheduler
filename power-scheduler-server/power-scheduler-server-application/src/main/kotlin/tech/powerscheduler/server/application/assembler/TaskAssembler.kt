@@ -24,7 +24,6 @@ class TaskAssembler {
             it.appCode = task.appGroup?.code
             it.jobType = task.jobType
             it.processor = task.processor
-            it.jobStatus = task.taskStatus
             it.executeParams = task.executeParams
             it.scheduleAt = task.scheduleAt
             it.executeMode = task.executeMode

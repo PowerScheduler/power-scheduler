@@ -1,6 +1,6 @@
 package tech.powerscheduler.worker.persistence
 
-import tech.powerscheduler.common.enums.JobStatusEnum
+import tech.powerscheduler.common.enums.TaskStatusEnum
 import tech.powerscheduler.worker.util.ClasspathUtil.readTextFrom
 import java.time.LocalDateTime
 
@@ -57,7 +57,7 @@ object TaskProgressRepository {
                                 this.id = rs.getLong("id")
                                 this.jobInstanceId = rs.getLong("job_instance_id")
                                 this.taskId = rs.getLong("task_id")
-                                this.status = rs.getString("status")?.let { JobStatusEnum.valueOf(it) }
+                                this.status = rs.getString("status")?.let { TaskStatusEnum.valueOf(it) }
                                 this.startAt = rs.getObject("start_at", LocalDateTime::class.java)
                                 this.endAt = rs.getObject("end_at", LocalDateTime::class.java)
                                 this.result = rs.getString("message")

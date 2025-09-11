@@ -1,6 +1,9 @@
 package tech.powerscheduler.common.dto.request
 
-import tech.powerscheduler.common.enums.*
+import tech.powerscheduler.common.enums.ExecuteModeEnum
+import tech.powerscheduler.common.enums.JobTypeEnum
+import tech.powerscheduler.common.enums.ScriptTypeEnum
+import tech.powerscheduler.common.enums.TaskTypeEnum
 import java.time.LocalDateTime
 
 /**
@@ -44,11 +47,6 @@ class JobDispatchRequestDTO {
      * 任务处理器
      */
     var processor: String? = null
-
-    /**
-     * 任务状态
-     */
-    var jobStatus: JobStatusEnum? = null
 
     /**
      * 执行参数

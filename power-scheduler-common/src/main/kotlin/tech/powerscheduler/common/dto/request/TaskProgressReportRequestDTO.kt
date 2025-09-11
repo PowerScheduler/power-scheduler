@@ -2,7 +2,7 @@ package tech.powerscheduler.common.dto.request
 
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
-import tech.powerscheduler.common.enums.JobStatusEnum
+import tech.powerscheduler.common.enums.TaskStatusEnum
 import java.time.LocalDateTime
 
 /**
@@ -25,7 +25,7 @@ class TaskProgressReportRequestDTO {
      * 任务状态
      */
     @NotNull
-    var taskStatus: JobStatusEnum? = null
+    var taskStatus: TaskStatusEnum? = null
 
     /**
      * 开始时间

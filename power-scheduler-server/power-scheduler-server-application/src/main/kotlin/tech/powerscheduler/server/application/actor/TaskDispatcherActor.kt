@@ -17,6 +17,7 @@ import org.springframework.transaction.support.TransactionTemplate
 import tech.powerscheduler.common.enums.ExecuteModeEnum
 import tech.powerscheduler.common.enums.JobSourceTypeEnum
 import tech.powerscheduler.common.enums.JobStatusEnum
+import tech.powerscheduler.common.enums.TaskStatusEnum
 import tech.powerscheduler.server.application.assembler.TaskAssembler
 import tech.powerscheduler.server.domain.appgroup.AppGroupKey
 import tech.powerscheduler.server.domain.common.PageQuery
@@ -220,7 +221,7 @@ class TaskDispatcherActor(
         val targetWorker = selectWorker(task, jobInstance, candidateWorkers)
         task.workerAddress = targetWorker
         task.schedulerAddress = serverAddressHolder.address
-        task.taskStatus = JobStatusEnum.DISPATCHING
+        task.taskStatus = TaskStatusEnum.DISPATCHING
         transactionTemplate.executeWithoutResult {
             taskRepository.save(task)
             if (jobInstance.jobStatus == JobStatusEnum.WAITING_DISPATCH) {

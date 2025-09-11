@@ -11,8 +11,7 @@ import tech.powerscheduler.common.dto.request.*
 import tech.powerscheduler.common.dto.response.FetchTaskResultResponseDTO
 import tech.powerscheduler.common.dto.response.PageDTO
 import tech.powerscheduler.common.enums.ExecuteModeEnum
-import tech.powerscheduler.common.enums.JobStatusEnum
-import tech.powerscheduler.common.enums.JobStatusEnum.FAILED
+import tech.powerscheduler.common.enums.TaskStatusEnum
 import tech.powerscheduler.common.enums.TaskTypeEnum
 import tech.powerscheduler.common.exception.BizException
 import tech.powerscheduler.server.application.assembler.TaskAssembler
@@ -146,7 +145,7 @@ class WorkerLifeCycleService(
             log.warn("updateProgress cancel: task [{}] not exist", taskId.value)
             return
         }
-        if (task.taskStatus in JobStatusEnum.COMPLETED_STATUSES) {
+        if (task.taskStatus in TaskStatusEnum.COMPLETED_STATUSES) {
             log.info("updateProgress cancel, task [{}] is already completed", taskId.value)
             return
         }
@@ -156,7 +155,7 @@ class WorkerLifeCycleService(
             this.endAt = param.endAt
             this.result = param.result?.take(2000)
         }
-        if (param.taskStatus == FAILED && task.canReattempt) {
+        if (param.taskStatus == TaskStatusEnum.FAILED && task.canReattempt) {
             task.resetStatusForReattempt()
         }
         val followingTasks = createFollowingTasks(task, param)
@@ -189,7 +188,7 @@ class WorkerLifeCycleService(
     fun needCreateSubTask(task: Task): Boolean {
         return task.executeMode in arrayOf(ExecuteModeEnum.MAP, ExecuteModeEnum.MAP_REDUCE)
                 && task.taskType in arrayOf(TaskTypeEnum.ROOT, TaskTypeEnum.SUB)
-                && task.taskStatus == JobStatusEnum.SUCCESS
+                && task.taskStatus == TaskStatusEnum.SUCCESS
     }
 
     fun removeWorkerRegistry(workerRegistry: WorkerRegistry) {

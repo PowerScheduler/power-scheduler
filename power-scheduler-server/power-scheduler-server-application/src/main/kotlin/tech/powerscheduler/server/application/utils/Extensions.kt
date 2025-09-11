@@ -88,3 +88,13 @@ fun WorkflowStatusEnum?.toDTO(): WorkflowStatusDTO {
         label = this.label,
     )
 }
+
+fun TaskStatusEnum?.toDTO(): TaskStatusDTO {
+    if (this == null) {
+        return TaskStatusDTO()
+    }
+    return TaskStatusDTO(
+        code = this.code,
+        label = this.label,
+    )
+}
