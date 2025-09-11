@@ -40,7 +40,7 @@ class WorkflowInstanceQueryResponseDTO {
     /**
      * 状态
      */
-    var status: WorkflowStatusDTO? = null
+    var status: EnumDTO? = null
 
     /**
      * 数据时间

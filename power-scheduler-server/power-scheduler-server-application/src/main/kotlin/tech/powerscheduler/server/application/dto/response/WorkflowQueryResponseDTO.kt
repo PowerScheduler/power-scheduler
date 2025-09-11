@@ -38,7 +38,7 @@ class WorkflowQueryResponseDTO {
     /**
      * 调度类型
      */
-    var scheduleType: ScheduleTypeDTO? = null
+    var scheduleType: EnumDTO? = null
 
     /**
      * 调度配置

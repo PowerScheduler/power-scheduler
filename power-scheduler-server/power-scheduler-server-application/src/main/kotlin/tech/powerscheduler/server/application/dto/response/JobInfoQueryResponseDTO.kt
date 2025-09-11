@@ -42,12 +42,12 @@ class JobInfoQueryResponseDTO {
     /**
      * 任务类型
      */
-    var jobType: JobTypeDTO? = null
+    var jobType: EnumDTO? = null
 
     /**
      * 调度类型
      */
-    var scheduleType: ScheduleTypeDTO? = null
+    var scheduleType: EnumDTO? = null
 
     /**
      * 调度配置
@@ -67,7 +67,7 @@ class JobInfoQueryResponseDTO {
     /**
      * 执行模式
      */
-    var executeMode: ExecuteModeDTO? = null
+    var executeMode: EnumDTO? = null
 
     /**
      * 下次触发时间
@@ -82,7 +82,7 @@ class JobInfoQueryResponseDTO {
     /**
      * 脚本类型
      */
-    var scriptType: ScriptTypeDTO? = null
+    var scriptType: EnumDTO? = null
 
     /**
      * 创建人

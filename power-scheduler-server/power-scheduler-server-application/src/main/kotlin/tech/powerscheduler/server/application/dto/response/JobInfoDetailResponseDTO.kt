@@ -32,12 +32,12 @@ class JobInfoDetailResponseDTO {
     /**
      * 任务类型
      */
-    var jobType: JobTypeDTO? = null
+    var jobType: EnumDTO? = null
 
     /**
      * 调度类型
      */
-    var scheduleType: ScheduleTypeDTO? = null
+    var scheduleType: EnumDTO? = null
 
     /**
      * 调度配置
@@ -52,7 +52,7 @@ class JobInfoDetailResponseDTO {
     /**
      * 执行模式
      */
-    var executeMode: ExecuteModeDTO? = null
+    var executeMode: EnumDTO? = null
 
     /**
      * 执行参数
@@ -77,7 +77,7 @@ class JobInfoDetailResponseDTO {
     /**
      * 脚本类型
      */
-    var scriptType: ScriptTypeDTO? = null
+    var scriptType: EnumDTO? = null
 
     /**
      * 脚本源代码
@@ -112,7 +112,7 @@ class JobInfoDetailResponseDTO {
     /**
      * 保留策略
      */
-    var retentionPolicy: RetentionPolicyDTO? = null
+    var retentionPolicy: EnumDTO? = null
 
     /**
      * 保留值
