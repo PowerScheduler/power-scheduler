@@ -88,9 +88,9 @@ class JobInstanceDetailResponseDTO {
     var scheduleType: EnumDTO? = null
 
     /**
-     * 任务信息
+     * 任务结果
      */
-    var message: String? = null
+    var result: String? = null
 
     /**
      * 数据时间

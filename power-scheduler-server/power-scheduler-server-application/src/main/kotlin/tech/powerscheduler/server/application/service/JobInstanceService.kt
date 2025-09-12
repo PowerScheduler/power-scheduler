@@ -68,7 +68,7 @@ class JobInstanceService(
     fun getErrorMessage(jobInstanceId: Long): String {
         val jobInstance = jobInstanceRepository.findById(JobInstanceId(jobInstanceId))
             ?: throw BizException(message = "重跑任务失败: 任务实例不存在")
-        return jobInstance.takeIf { it.jobStatus == FAILED }?.message.orEmpty()
+        return jobInstance.takeIf { it.jobStatus == FAILED }?.result.orEmpty()
     }
 
     fun terminate(jobInstanceId: Long) {

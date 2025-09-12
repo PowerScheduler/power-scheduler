@@ -96,9 +96,9 @@ class JobInstance {
     var scheduleType: ScheduleTypeEnum? = null
 
     /**
-     * 任务信息
+     * 任务结果
      */
-    var message: String? = null
+    var result: String? = null
 
     /**
      * 数据时间
@@ -185,7 +185,7 @@ class JobInstance {
         this.startAt = this.startAt ?: LocalDateTime.now()
         this.endAt = LocalDateTime.now()
         this.jobStatus = JobStatusEnum.FAILED
-        this.message = message?.take(2000)
+        this.result = message?.take(2000)
     }
 
     fun resetStatusForReattempt() {
@@ -273,7 +273,7 @@ class JobInstance {
             it.executeParams = this.executeParams
             it.executeMode = this.executeMode
             it.scheduleType = this.scheduleType
-            it.result = this.message
+            it.result = this.result
             it.dataTime = this.dataTime
             it.scriptType = this.scriptType
             it.scriptCode = this.scriptCode
@@ -327,7 +327,7 @@ class JobInstance {
                 this.resetStatusForReattempt()
             } else {
                 if (this.executeMode == SINGLE) {
-                    this.message = tasks.mapNotNull { it.result }.firstOrNull { it.isNotBlank() }
+                    this.result = tasks.mapNotNull { it.result }.firstOrNull { it.isNotBlank() }
                 }
             }
         }

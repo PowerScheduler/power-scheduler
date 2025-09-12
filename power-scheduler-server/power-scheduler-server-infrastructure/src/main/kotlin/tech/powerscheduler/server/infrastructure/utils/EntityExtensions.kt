@@ -157,7 +157,7 @@ fun JobInstance.toEntity(): JobInstanceEntity {
         it.executeParams = this.executeParams
         it.executeMode = this.executeMode
         it.scheduleType = this.scheduleType
-        it.message = this.message
+        it.result = this.result
         it.dataTime = this.dataTime
         it.scriptType = this.scriptType
         it.scriptCode = this.scriptCode
@@ -189,7 +189,7 @@ fun JobInstanceEntity.toDomainModel(): JobInstance {
         it.executeParams = this.executeParams
         it.executeMode = this.executeMode
         it.scheduleType = this.scheduleType
-        it.message = this.message
+        it.result = this.result
         it.dataTime = this.dataTime
         it.scriptType = this.scriptType
         it.scriptCode = this.scriptCode

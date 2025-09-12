@@ -48,7 +48,7 @@ class JobInstanceAssembler {
             this.executeParams = jobInstance.executeParams
             this.executeMode = jobInstance.executeMode.toDTO()
             this.scheduleType = jobInstance.scheduleType.toDTO()
-            this.message = jobInstance.message
+            this.result = jobInstance.result
             this.dataTime = jobInstance.dataTime
             this.scriptType = jobInstance.scriptType.toDTO()
             this.scriptCode = jobInstance.scriptCode
@@ -79,7 +79,7 @@ class JobInstanceAssembler {
             this.executeParams = jobInstance.executeParams
             this.executeMode = jobInstance.executeMode.toDTO()
             this.scheduleType = jobInstance.scheduleType.toDTO()
-            this.message = jobInstance.message
+            this.result = jobInstance.result
             this.dataTime = jobInstance.dataTime
             this.scriptType = jobInstance.scriptType.toDTO()
             this.scriptCode = jobInstance.scriptCode

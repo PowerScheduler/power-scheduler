@@ -8,9 +8,9 @@ import tech.powerscheduler.common.enums.*
 import tech.powerscheduler.server.application.dto.request.JobInstanceQueryRequestDTO
 import tech.powerscheduler.server.domain.appgroup.AppGroup
 import tech.powerscheduler.server.domain.appgroup.AppGroupId
-import tech.powerscheduler.server.domain.job.JobId
 import tech.powerscheduler.server.domain.job.JobInstance
 import tech.powerscheduler.server.domain.job.JobInstanceId
+import tech.powerscheduler.server.domain.job.SourceId
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
@@ -43,7 +43,7 @@ class JobInstanceAssemblerTest : FunSpec({
             val jobInstance = JobInstance().also {
                 it.appGroup = appGroup
                 it.id = JobInstanceId(1L)
-                it.sourceId = JobId(2L)
+                it.sourceId = SourceId(2L)
                 it.jobName = "jobName"
                 it.jobType = JobTypeEnum.JAVA
                 it.processor = "processor"
@@ -54,7 +54,7 @@ class JobInstanceAssemblerTest : FunSpec({
                 it.executeParams = "executeParams"
                 it.executeMode = ExecuteModeEnum.entries.random()
                 it.scheduleType = ScheduleTypeEnum.FIX_RATE
-                it.message = "message"
+                it.result = "message"
                 it.dataTime = LocalDateTime.now().truncatedTo(ChronoUnit.DAYS)
                 it.scriptType = ScriptTypeEnum.PYTHON
                 it.scriptCode = "scriptCode"
@@ -77,7 +77,7 @@ class JobInstanceAssemblerTest : FunSpec({
             result.executeParams shouldBe jobInstance.executeParams
             result.executeMode?.code shouldBe jobInstance.executeMode?.name
             result.scheduleType?.code shouldBe jobInstance.scheduleType?.name
-            result.message shouldBe jobInstance.message
+            result.result shouldBe jobInstance.result
             result.dataTime shouldBe jobInstance.dataTime
             result.scriptType?.code shouldBe jobInstance.scriptType?.name
             result.scriptCode shouldBe jobInstance.scriptCode
@@ -100,7 +100,7 @@ class JobInstanceAssemblerTest : FunSpec({
             val jobInstance = JobInstance().also {
                 it.appGroup = appGroup
                 it.id = JobInstanceId(1L)
-                it.sourceId = JobId(2L)
+                it.sourceId = SourceId(2L)
                 it.jobName = "jobName"
                 it.jobType = JobTypeEnum.JAVA
                 it.processor = "processor"
@@ -111,7 +111,7 @@ class JobInstanceAssemblerTest : FunSpec({
                 it.executeParams = "executeParams"
                 it.executeMode = ExecuteModeEnum.entries.random()
                 it.scheduleType = ScheduleTypeEnum.FIX_RATE
-                it.message = "message"
+                it.result = "message"
                 it.dataTime = LocalDateTime.now().truncatedTo(ChronoUnit.DAYS)
                 it.scriptType = ScriptTypeEnum.PYTHON
                 it.scriptCode = "scriptCode"
@@ -134,7 +134,7 @@ class JobInstanceAssemblerTest : FunSpec({
             result.executeParams shouldBe jobInstance.executeParams
             result.executeMode?.code shouldBe jobInstance.executeMode?.name
             result.scheduleType?.code shouldBe jobInstance.scheduleType?.name
-            result.message shouldBe jobInstance.message
+            result.result shouldBe jobInstance.result
             result.dataTime shouldBe jobInstance.dataTime
             result.scriptType?.code shouldBe jobInstance.scriptType?.name
             result.scriptCode shouldBe jobInstance.scriptCode

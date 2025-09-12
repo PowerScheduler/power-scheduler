@@ -130,10 +130,10 @@ class JobInstanceEntity() : BaseEntity() {
     var scheduleType: ScheduleTypeEnum? = null
 
     /**
-     * 任务信息
+     * 任务结果
      */
-    @Column(name = "message", insertable = false, length = 6000)
-    var message: String? = null
+    @Column(name = "result", insertable = false, length = 6000)
+    var result: String? = null
 
     /**
      * 数据时间

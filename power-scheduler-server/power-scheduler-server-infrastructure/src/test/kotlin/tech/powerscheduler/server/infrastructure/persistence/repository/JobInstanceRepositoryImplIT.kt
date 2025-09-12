@@ -65,7 +65,7 @@ class JobInstanceRepositoryImplIT(
                         it.executeParams = "executeParams"
                         it.executeMode = ExecuteModeEnum.entries.random()
                         it.scheduleType = ScheduleTypeEnum.entries.random()
-                        it.message = "message"
+                        it.result = "message"
                         it.dataTime = LocalDateTime.now().truncatedTo(ChronoUnit.DAYS)
                         it.scriptType = ScriptTypeEnum.entries.random()
                         it.scriptCode = "scriptCode"
@@ -122,7 +122,7 @@ class JobInstanceRepositoryImplIT(
                 it.executeParams = "executeParams"
                 it.executeMode = ExecuteModeEnum.entries.random()
                 it.scheduleType = ScheduleTypeEnum.entries.random()
-                it.message = "message"
+                it.result = "message"
                 it.dataTime = LocalDateTime.now().truncatedTo(ChronoUnit.DAYS)
                 it.scriptType = ScriptTypeEnum.entries.random()
                 it.scriptCode = "scriptCode"
