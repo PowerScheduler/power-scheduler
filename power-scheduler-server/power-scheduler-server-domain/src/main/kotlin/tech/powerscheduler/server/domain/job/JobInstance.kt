@@ -312,22 +312,28 @@ class JobInstance {
     }
 
     fun updateProgress(tasks: Iterable<Task>) {
-        val calculatedJobStatus = this.calculateJobStatus(tasks)
-        this.jobStatus = calculatedJobStatus
+        val newJobStatus = this.calculateJobStatus(tasks)
+        this.jobStatus = newJobStatus
         // task可能会失败重试, 开始时间只取第一个task的开始时间
         if (this.startAt == null) {
             this.startAt = this.calculateStartAt(tasks)
         }
         this.workerAddress = this.calculateWorkerAddress(tasks)
-        if (calculatedJobStatus in JobStatusEnum.COMPLETED_STATUSES) {
+        if (newJobStatus in JobStatusEnum.COMPLETED_STATUSES) {
             this.endAt = this.calculateEndAt(tasks)
-        }
-        if (calculatedJobStatus == JobStatusEnum.FAILED) {
-            if (this.canReattempt) {
-                this.resetStatusForReattempt()
-            } else {
-                if (this.executeMode == SINGLE) {
-                    this.result = tasks.mapNotNull { it.result }.firstOrNull { it.isNotBlank() }
+            if (newJobStatus == JobStatusEnum.SUCCESS) {
+                this.result = when (executeMode!!) {
+                    SINGLE -> tasks.first().result ?: ""
+                    BROADCAST -> ""
+                    MAP -> ""
+                    MAP_REDUCE -> tasks.first { it.taskType == TaskTypeEnum.REDUCE }.result ?: ""
+                }
+            }
+            if (newJobStatus == JobStatusEnum.FAILED) {
+                if (this.canReattempt) {
+                    this.resetStatusForReattempt()
+                } else {
+                    this.result = tasks.find { it.taskStatus == TaskStatusEnum.FAILED }?.result
                 }
             }
         }
