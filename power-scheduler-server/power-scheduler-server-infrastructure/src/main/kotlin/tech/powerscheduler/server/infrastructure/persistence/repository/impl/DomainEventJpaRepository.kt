@@ -4,8 +4,10 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor
+import org.springframework.data.jpa.repository.Modifying
+import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
-import tech.powerscheduler.server.domain.domainevent.AggregateTypeEnum
+import org.springframework.transaction.annotation.Transactional
 import tech.powerscheduler.server.domain.domainevent.DomainEventStatusEnum
 import tech.powerscheduler.server.domain.domainevent.DomainEventTypeEnum
 import tech.powerscheduler.server.infrastructure.persistence.model.DomainEventEntity
@@ -24,6 +26,9 @@ interface DomainEventJpaRepository
         pageable: Pageable,
     ): Page<DomainEventEntity>
 
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM DomainEventEntity e WHERE e.eventStatus = :status")
     fun deleteByEventStatus(status: DomainEventStatusEnum)
 
 }

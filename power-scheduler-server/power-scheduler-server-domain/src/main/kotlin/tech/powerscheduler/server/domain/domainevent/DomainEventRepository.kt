@@ -2,7 +2,6 @@ package tech.powerscheduler.server.domain.domainevent
 
 import tech.powerscheduler.server.domain.common.Page
 import tech.powerscheduler.server.domain.common.PageQuery
-import tech.powerscheduler.server.domain.job.JobInstanceId
 
 /**
  * @author grayrat
