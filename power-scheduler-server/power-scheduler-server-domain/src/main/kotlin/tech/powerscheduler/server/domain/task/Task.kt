@@ -43,12 +43,6 @@ class Task {
     var jobInstanceId: JobInstanceId? = null
 
     /**
-     * 应用编码
-     */
-    @Deprecated(message = "replaced by appGroup")
-    var appCode: String? = null
-
-    /**
      * 任务名称
      */
     var taskName: String? = null

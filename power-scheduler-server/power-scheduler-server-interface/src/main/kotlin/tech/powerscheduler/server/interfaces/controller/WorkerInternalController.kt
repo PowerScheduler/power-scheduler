@@ -82,7 +82,7 @@ internal class WorkerInternalController(
     }
 
     @PostMapping(FETCH_TASK_RESULT)
-    fun reportMetrics(
+    fun fetchTaskResult(
         @RequestBody @NotNull param: FetchTaskResultRequestDTO?,
     ) = wrapperResponse {
         val result = workerLifeCycleService.fetchTaskResult(param = param!!)

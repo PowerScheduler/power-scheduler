@@ -28,12 +28,6 @@ class JobInfo {
     var id: JobId? = null
 
     /**
-     * 应用编码
-     */
-    @Deprecated(message = "replace with appGroup")
-    var appCode: String? = null
-
-    /**
      * 任务名称
      */
     var jobName: String? = null
