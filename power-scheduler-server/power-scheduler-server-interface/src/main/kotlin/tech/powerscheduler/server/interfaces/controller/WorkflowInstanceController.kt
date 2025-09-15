@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import tech.powerscheduler.server.application.dto.request.WorkflowInstanceQueryRequestDTO
+import tech.powerscheduler.server.application.dto.request.WorkflowNodeInstanceProgressQueryRequestDTO
 import tech.powerscheduler.server.application.service.WorkflowInstanceService
 
 /**
@@ -33,6 +34,14 @@ class WorkflowInstanceController(
     @GetMapping("/detail")
     fun getWorkflowInstance(@Validated @NotNull workflowInstanceId: Long?) = wrapperResponse {
         return@wrapperResponse workflowInstanceService.get(workflowInstanceId!!)
+    }
+
+    @Operation(summary = "查询工作流节点实例进度")
+    @GetMapping("/queryProgress")
+    fun queryWorkflowNodeInstanceProgress(
+        @Validated @NotNull param: WorkflowNodeInstanceProgressQueryRequestDTO?
+    ) = wrapperResponse {
+        return@wrapperResponse workflowInstanceService.queryProgress(param!!)
     }
 
     @Operation(summary = "重跑任务")

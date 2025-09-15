@@ -26,7 +26,7 @@ import java.time.LocalDateTime
  */
 @Repository
 class JobInstanceRepositoryImpl(
-    private val jobInstanceJpaRepository: JobInstanceJpaRepository
+    private val jobInstanceJpaRepository: JobInstanceJpaRepository,
 ) : JobInstanceRepository {
 
     override fun countGroupedByJobStatusWithAppCode(
@@ -50,6 +50,11 @@ class JobInstanceRepositoryImpl(
 
     override fun findById(jobInstanceId: JobInstanceId): JobInstance? {
         val entity = jobInstanceJpaRepository.findByIdOrNull(jobInstanceId.value)
+        return entity?.toDomainModel()
+    }
+
+    override fun findByWorkflowNodeInstanceCode(workflowNodeInstanceCode: String): JobInstance? {
+        val entity = jobInstanceJpaRepository.findByWorkflowNodeInstanceCode(workflowNodeInstanceCode)
         return entity?.toDomainModel()
     }
 

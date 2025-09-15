@@ -3,18 +3,20 @@ package tech.powerscheduler.server.application.service
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import tech.powerscheduler.common.dto.response.PageDTO
+import tech.powerscheduler.common.enums.TaskTypeEnum
 import tech.powerscheduler.common.exception.BizException
+import tech.powerscheduler.server.application.assembler.TaskAssembler
 import tech.powerscheduler.server.application.assembler.WorkflowInstanceAssembler
 import tech.powerscheduler.server.application.dto.request.WorkflowInstanceQueryRequestDTO
+import tech.powerscheduler.server.application.dto.request.WorkflowNodeInstanceProgressQueryRequestDTO
+import tech.powerscheduler.server.application.dto.response.JobProgressQueryResponseDTO
 import tech.powerscheduler.server.application.dto.response.WorkflowInstanceDetailResponseDTO
 import tech.powerscheduler.server.application.dto.response.WorkflowInstanceQueryResponseDTO
 import tech.powerscheduler.server.application.utils.toDTO
+import tech.powerscheduler.server.domain.common.PageQuery
 import tech.powerscheduler.server.domain.job.JobInstanceRepository
 import tech.powerscheduler.server.domain.task.TaskRepository
-import tech.powerscheduler.server.domain.workflow.WorkflowInstanceId
-import tech.powerscheduler.server.domain.workflow.WorkflowInstanceRepository
-import tech.powerscheduler.server.domain.workflow.WorkflowNodeInstanceRepository
-import tech.powerscheduler.server.domain.workflow.WorkflowRepository
+import tech.powerscheduler.server.domain.workflow.*
 import java.time.LocalDateTime
 
 /**
@@ -28,6 +30,7 @@ class WorkflowInstanceService(
     private val workflowRepository: WorkflowRepository,
     private val workflowInstanceRepository: WorkflowInstanceRepository,
     private val workflowNodeInstanceRepository: WorkflowNodeInstanceRepository,
+    private val taskAssembler: TaskAssembler,
     private val workflowInstanceAssembler: WorkflowInstanceAssembler,
 ) {
 
@@ -40,6 +43,26 @@ class WorkflowInstanceService(
     fun get(workflowInstanceId: Long): WorkflowInstanceDetailResponseDTO? {
         val workflowInstance = workflowInstanceRepository.findById(WorkflowInstanceId(workflowInstanceId))
         return workflowInstance?.let { workflowInstanceAssembler.toWorkflowInstanceDetailResponseDTO(it) }
+    }
+
+    fun queryProgress(param: WorkflowNodeInstanceProgressQueryRequestDTO): PageDTO<JobProgressQueryResponseDTO> {
+        val workflowNodeInstanceId = WorkflowNodeInstanceId(param.workflowNodeInstanceId!!)
+        val workflowNodeInstance = workflowNodeInstanceRepository.findById(workflowNodeInstanceId)
+            ?: throw BizException("工作流节点不存在")
+        val workflowNodeInstanceCode = workflowNodeInstance.nodeInstanceCode.orEmpty()
+        val jobInstance = jobInstanceRepository.findByWorkflowNodeInstanceCode(workflowNodeInstanceCode)
+            ?: return PageDTO.empty()
+        val batch = jobInstance.batch!!
+        val page = taskRepository.findAllByJobInstanceIdAndBatchAndTaskType(
+            jobInstanceId = jobInstance.id!!,
+            batch = batch,
+            taskTypes = TaskTypeEnum.entries,
+            pageQuery = PageQuery().also {
+                it.pageNo = param.pageNo
+                it.pageSize = param.pageSize
+            }
+        )
+        return page.toDTO().map { taskAssembler.toJobProgressQueryResponseDTO(it) }
     }
 
     @Transactional

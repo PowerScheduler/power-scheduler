@@ -8,6 +8,12 @@ import java.time.LocalDateTime
  * @since 2025/7/9
  */
 class WorkflowInstanceDetailResponseDTO {
+
+    /**
+     * 工作流节点实例信息
+     */
+    var workflowNodeInstances: List<WorkflowNodeInstanceDetailResponseDTO> = emptyList()
+
     /**
      * 应用编码
      */

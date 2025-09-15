@@ -60,6 +60,11 @@ class WorkflowInstanceAssembler {
             this.endAt = workflowInstance.endAt
             this.dataTime = workflowInstance.dataTime
             this.graphData = JSON.writeValueAsString(workflowInstance.graphData!!)
+
+            val workflowNodeInstanceAssembler = WorkflowNodeInstanceAssembler()
+            this.workflowNodeInstances = workflowInstance.workflowNodeInstances.map {
+                workflowNodeInstanceAssembler.toWorkflowNodeInstanceDetailResponseDTO(it)
+            }
         }
     }
 

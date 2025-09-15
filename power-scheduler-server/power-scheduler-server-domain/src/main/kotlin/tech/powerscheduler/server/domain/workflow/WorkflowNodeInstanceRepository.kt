@@ -6,10 +6,9 @@ package tech.powerscheduler.server.domain.workflow
  */
 interface WorkflowNodeInstanceRepository {
 
-    fun lockById(jobInstanceId: WorkflowNodeInstanceId): WorkflowNodeInstance?
+    fun findById(workflowNodeInstanceId: WorkflowNodeInstanceId): WorkflowNodeInstance?
 
     fun save(workflowNodeInstance: WorkflowNodeInstance): WorkflowNodeInstanceId
 
     fun saveAll(workflowNodeInstances: Iterable<WorkflowNodeInstance>)
-
 }

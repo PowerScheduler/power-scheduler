@@ -101,6 +101,11 @@ class WorkflowNodeInstance {
     var workerAddress: String? = null
 
     /**
+     * 调度器地址
+     */
+    var schedulerAddress: String? = null
+
+    /**
      * 最大重试次数
      */
     var maxAttemptCnt: Int? = null

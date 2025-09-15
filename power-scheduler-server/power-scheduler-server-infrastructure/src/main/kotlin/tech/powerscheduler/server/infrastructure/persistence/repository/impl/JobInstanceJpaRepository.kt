@@ -21,6 +21,8 @@ import java.time.LocalDateTime
 interface JobInstanceJpaRepository :
     JpaRepository<JobInstanceEntity, Long>, JpaSpecificationExecutor<JobInstanceEntity> {
 
+    fun findByWorkflowNodeInstanceCode(workflowNodeInstanceCode: String): JobInstanceEntity?
+
     @Query(
         """
         SELECT j.jobStatus, COUNT(j)
