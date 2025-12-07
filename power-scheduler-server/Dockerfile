@@ -11,7 +11,7 @@ ENV JVM_OPTIONS=" \
 -XX:+AlwaysPreTouch \
 -XX:+ExitOnOutOfMemoryError \
 -XX:+HeapDumpOnOutOfMemoryError \
--XX:HeapDumpPath=/app/dump \
+-XX:HeapDumpPath=/app/dumps/heapdump.hprof \
 -XX:NativeMemoryTracking=summary \
 -Xlog:gc*,gc+heap=debug:file=/app/logs/jvm_gc.log:time,uptime,level,tags:filecount=5,filesize=10M \
 -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005 \

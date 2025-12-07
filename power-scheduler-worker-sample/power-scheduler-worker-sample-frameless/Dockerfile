@@ -4,8 +4,9 @@ WORKDIR /app
 
 ENV TZ=Asia/Shanghai
 ENV JVM_OPTIONS="\
+-XX:+ExitOnOutOfMemoryError \
 -XX:+HeapDumpOnOutOfMemoryError \
--XX:HeapDumpPath=/app/dump \
+-XX:HeapDumpPath=/app/dumps/heapdump.hprof \
 -Xlog:gc*,safepoint:file=/app/logs/gc.log:time,level,tags \
 "
 ENV ARGS=""
