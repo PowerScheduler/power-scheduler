@@ -82,7 +82,8 @@ class TaskExecutorService(
             context = taskContext,
             scheduleAt = command.scheduleAt!!,
             processorPath = command.processor!!,
-            priority = command.priority
+            priority = command.priority,
+            callback = { taskRegistry.remove(command.taskId) }
         )
         val taskProgressEntity = TaskProgressEntity().also {
             it.jobInstanceId = command.jobInstanceId!!

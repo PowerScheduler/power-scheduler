@@ -36,6 +36,10 @@ class Task(
      * 任务优先级
      */
     val priority: Int,
+    /**
+     * 任务结束后回调函数
+     */
+    val callback: () -> Unit
 ) : Delayed {
 
     private val log = LoggerFactory.getLogger(Task::class.qualifiedName)
@@ -110,6 +114,8 @@ class Task(
         } catch (e: Throwable) {
             log.error("[Powerscheduler] Error while executing jobInstance [{}]", context.jobInstanceId, e)
             updateProgress(taskStatus = TaskStatusEnum.FAILED, result = e.stackTraceToString())
+        } finally {
+            callback()
         }
     }
 
