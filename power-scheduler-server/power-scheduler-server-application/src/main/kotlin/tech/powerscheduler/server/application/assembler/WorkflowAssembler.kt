@@ -9,10 +9,10 @@ import tech.powerscheduler.server.application.dto.response.WorkflowDetailRespons
 import tech.powerscheduler.server.application.dto.response.WorkflowQueryResponseDTO
 import tech.powerscheduler.server.application.utils.JSON
 import tech.powerscheduler.server.application.utils.toDTO
-import tech.powerscheduler.server.domain.appgroup.AppGroup
 import tech.powerscheduler.server.domain.workflow.Workflow
 import tech.powerscheduler.server.domain.workflow.WorkflowGraphData
 import tech.powerscheduler.server.domain.workflow.WorkflowQuery
+import tech.powerscheduler.server.domain.workflowgroup.WorkflowGroup
 
 /**
  * @author grayrat
@@ -24,17 +24,17 @@ class WorkflowAssembler {
     fun toDomainQuery(param: WorkflowQueryRequestDTO): WorkflowQuery {
         return WorkflowQuery().apply {
             this.namespaceCode = param.namespaceCode
-            this.appCode = param.appCode
+            this.workflowGroupCode = param.workflowGroupCode
             this.name = param.name
         }
     }
 
     fun toWorkflowQueryResponseDTO(workflow: Workflow): WorkflowQueryResponseDTO {
         return WorkflowQueryResponseDTO().apply {
-            val appGroup = workflow.appGroup!!
-            this.namespaceCode = appGroup.namespace!!.code
-            this.appCode = appGroup.code
-            this.appName = appGroup.name
+            val workflowGroup = workflow.workflowGroup!!
+            this.namespaceCode = workflowGroup.namespace!!.code
+            this.workflowGroupCode = workflowGroup.code
+            this.workflowGroupName = workflowGroup.name
             this.id = workflow.id!!.value
             this.name = workflow.name
             this.enabled = workflow.enabled
@@ -51,7 +51,7 @@ class WorkflowAssembler {
 
     fun toWorkflowDetailResponseDTO(workflow: Workflow): WorkflowDetailResponseDTO {
         return WorkflowDetailResponseDTO().apply {
-            this.appCode = workflow.appGroup!!.code
+            this.workflowGroupCode = workflow.workflowGroup!!.code
             this.id = workflow.id!!.value
             this.name = workflow.name
             this.description = workflow.description
@@ -65,9 +65,9 @@ class WorkflowAssembler {
         }
     }
 
-    fun toDomainModel4AddRequest(appGroup: AppGroup, param: WorkflowAddRequestDTO): Workflow {
+    fun toDomainModel4AddRequest(workflowGroup: WorkflowGroup, param: WorkflowAddRequestDTO): Workflow {
         return Workflow().apply {
-            this.appGroup = appGroup
+            this.workflowGroup = workflowGroup
             this.name = param.name
             this.description = param.description
             this.enabled = false
@@ -82,7 +82,7 @@ class WorkflowAssembler {
 
     fun toDomainModel4EditRequest(workflow: Workflow, param: WorkflowEditRequestDTO): Workflow {
         return Workflow().apply {
-            this.appGroup = workflow.appGroup
+            this.workflowGroup = workflow.workflowGroup
             this.id = workflow.id
             this.name = param.name
             this.description = param.description

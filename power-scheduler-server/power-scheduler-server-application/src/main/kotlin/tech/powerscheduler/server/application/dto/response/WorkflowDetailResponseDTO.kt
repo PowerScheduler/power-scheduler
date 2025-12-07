@@ -9,9 +9,10 @@ import tech.powerscheduler.common.enums.ScheduleTypeEnum
  */
 class WorkflowDetailResponseDTO {
     /**
-     * 应用编码
+     * 工作流分组编码
      */
-    var appCode: String? = null
+    var workflowGroupCode: String? = null
+
     /**
      * 主键
      */

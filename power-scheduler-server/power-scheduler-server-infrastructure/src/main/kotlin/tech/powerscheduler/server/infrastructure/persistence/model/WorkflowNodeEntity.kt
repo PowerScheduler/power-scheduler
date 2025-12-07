@@ -19,6 +19,10 @@ class WorkflowNodeEntity : BaseEntity() {
     @JoinColumn(name = "workflow_id", nullable = false)
     var workflowEntity: WorkflowEntity? = null
 
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "app_group_id", nullable = false)
+    var appGroupEntity: AppGroupEntity? = null
+
     /**
      * 子节点集合
      */

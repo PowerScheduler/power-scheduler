@@ -79,6 +79,7 @@ class Ports {
 }
 
 open class BaseDataBody {
+    var appCode: String? = null
     var name: String? = null
     var description: String? = null
     var processor: String? = null

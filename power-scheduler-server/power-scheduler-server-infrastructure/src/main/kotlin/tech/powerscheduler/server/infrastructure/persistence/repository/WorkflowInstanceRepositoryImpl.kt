@@ -10,9 +10,9 @@ import tech.powerscheduler.common.enums.WorkflowStatusEnum
 import tech.powerscheduler.server.domain.common.Page
 import tech.powerscheduler.server.domain.common.PageQuery
 import tech.powerscheduler.server.domain.workflow.*
-import tech.powerscheduler.server.infrastructure.persistence.model.AppGroupEntity
 import tech.powerscheduler.server.infrastructure.persistence.model.JobInstanceEntity
 import tech.powerscheduler.server.infrastructure.persistence.model.NamespaceEntity
+import tech.powerscheduler.server.infrastructure.persistence.model.WorkflowGroupEntity
 import tech.powerscheduler.server.infrastructure.persistence.model.WorkflowInstanceEntity
 import tech.powerscheduler.server.infrastructure.persistence.repository.impl.WorkflowInstanceJpaRepository
 import tech.powerscheduler.server.infrastructure.utils.toDomainModel
@@ -57,17 +57,17 @@ class WorkflowInstanceRepositoryImpl(
             Sort.by(JobInstanceEntity::id.name).descending()
         )
         val specification = Specification<WorkflowInstanceEntity> { root, _, criteriaBuilder ->
-            val appGroupJoin = root.join<WorkflowInstanceEntity, AppGroupEntity>(
-                WorkflowInstanceEntity::appGroupEntity.name, JoinType.INNER
+            val workflowGroupJoin = root.join<WorkflowInstanceEntity, WorkflowGroupEntity>(
+                WorkflowInstanceEntity::workflowGroupEntity.name, JoinType.INNER
             )
-            val namespaceJoin = appGroupJoin.join<AppGroupEntity, NamespaceEntity>(
-                AppGroupEntity::namespaceEntity.name, JoinType.INNER
+            val namespaceJoin = workflowGroupJoin.join<WorkflowGroupEntity, NamespaceEntity>(
+                WorkflowGroupEntity::namespaceEntity.name, JoinType.INNER
             )
             val namespaceCodeEquals = criteriaBuilder.equal(
                 namespaceJoin.get<String>(NamespaceEntity::code.name), query.namespaceCode
             )
             val appCodeEqual = query.appCode.takeUnless { it.isNullOrBlank() }?.let {
-                criteriaBuilder.equal(appGroupJoin.get<String>(AppGroupEntity::code.name), it)
+                criteriaBuilder.equal(workflowGroupJoin.get<String>(WorkflowGroupEntity::code.name), it)
             }
             val workflowIdEqual = query.workflowId?.let {
                 criteriaBuilder.equal(root.get<Long>(WorkflowInstanceEntity::workflowId.name), it)
@@ -85,7 +85,7 @@ class WorkflowInstanceRepositoryImpl(
                 criteriaBuilder.between(root.get(JobInstanceEntity::endAt.name), it[0], it[1])
             }
             val predicates = listOfNotNull(
-                namespaceCodeEquals, appCodeEqual,
+                namespaceCodeEquals,
                 workflowIdEqual, workflowInstanceIdEqual, statusEqual,
                 startAtBetween, endAtBetween
             )

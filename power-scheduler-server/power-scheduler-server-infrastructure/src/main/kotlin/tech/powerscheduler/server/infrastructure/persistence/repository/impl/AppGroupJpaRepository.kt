@@ -19,4 +19,6 @@ interface AppGroupJpaRepository :
         code: String
     ): AppGroupEntity?
 
+    fun findAllByCodeIn(appCodes: Collection<String>): List<AppGroupEntity>
+
 }

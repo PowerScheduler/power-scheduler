@@ -2,6 +2,7 @@ package tech.powerscheduler.server.application.assembler
 
 import org.springframework.stereotype.Component
 import tech.powerscheduler.server.application.dto.request.WorkflowNodeDTO
+import tech.powerscheduler.server.domain.appgroup.AppGroup
 import tech.powerscheduler.server.domain.workflow.Workflow
 import tech.powerscheduler.server.domain.workflow.WorkflowNode
 
@@ -14,6 +15,7 @@ class WorkflowNodeAssembler {
 
     fun toDomainModel4AddRequest(
         workflow: Workflow,
+        appCode2AppGroup: Map<String, AppGroup>,
         nodes: List<WorkflowNodeDTO>,
     ): List<WorkflowNode> {
         val nodeCode2workflowNode = nodes.associate {
@@ -21,6 +23,7 @@ class WorkflowNodeAssembler {
                 it.workflowNodeCode,
                 toDomainModel4Add(
                     workflow = workflow,
+                    appGroup = appCode2AppGroup[it.appCode],
                     currentNode = it,
                 )
             )
@@ -35,6 +38,7 @@ class WorkflowNodeAssembler {
 
     fun toDomainModel4EditRequest(
         workflow: Workflow,
+        appCode2AppGroup: Map<String, AppGroup>,
         nodes: List<WorkflowNodeDTO>,
         existNodes: List<WorkflowNode>,
     ): List<WorkflowNode> {
@@ -45,12 +49,14 @@ class WorkflowNodeAssembler {
                 if (nodeCode2existNode.containsKey(it.workflowNodeCode)) {
                     toDomainModel4Edit(
                         workflow = workflow,
+                        appGroup = appCode2AppGroup[it.appCode],
                         currentNode = it,
                         existNode = nodeCode2existNode[it.workflowNodeCode]!!,
                     )
                 } else {
                     toDomainModel4Add(
                         workflow = workflow,
+                        appGroup = appCode2AppGroup[it.appCode],
                         currentNode = it,
                     )
                 }
@@ -67,10 +73,12 @@ class WorkflowNodeAssembler {
 
     fun toDomainModel4Add(
         workflow: Workflow,
+        appGroup: AppGroup?,
         currentNode: WorkflowNodeDTO,
     ): WorkflowNode {
         return WorkflowNode().apply {
             this.workflow = workflow
+            this.appGroup = appGroup
             this.code = currentNode.workflowNodeCode
             this.name = currentNode.name
             this.description = currentNode.description
@@ -90,11 +98,13 @@ class WorkflowNodeAssembler {
 
     fun toDomainModel4Edit(
         workflow: Workflow,
+        appGroup: AppGroup?,
         currentNode: WorkflowNodeDTO,
         existNode: WorkflowNode,
     ): WorkflowNode {
         return WorkflowNode().apply {
             this.workflow = workflow
+            this.appGroup = appGroup
             this.id = existNode.id
             this.code = currentNode.workflowNodeCode
             this.name = currentNode.name

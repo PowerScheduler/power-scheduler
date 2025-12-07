@@ -10,6 +10,7 @@ import tech.powerscheduler.server.infrastructure.persistence.model.WorkflowNodeE
  */
 fun WorkflowNode.toEntity(): WorkflowNodeEntity {
     return WorkflowNodeEntity().also {
+        it.appGroupEntity = this.appGroup!!.toEntity()
         it.id = this.id?.value
         it.code = this.code
         it.name = this.name
@@ -30,6 +31,7 @@ fun WorkflowNode.toEntity(): WorkflowNodeEntity {
 
 fun WorkflowNodeEntity.toDomainModel(): WorkflowNode {
     return WorkflowNode().also {
+        it.appGroup = this.appGroupEntity!!.toDomainModel()
         it.id = WorkflowNodeId(this.id!!)
         it.code = this.code
         it.name = this.name

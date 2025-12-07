@@ -1,6 +1,7 @@
 package tech.powerscheduler.server.domain.workflow
 
 import tech.powerscheduler.common.enums.*
+import tech.powerscheduler.server.domain.appgroup.AppGroup
 import tech.powerscheduler.server.domain.job.JobInstance
 import java.time.LocalDateTime
 
@@ -9,6 +10,11 @@ import java.time.LocalDateTime
  * @since 2025/6/21
  */
 class WorkflowNodeInstance {
+
+    /**
+     * 应用分组
+     */
+    var appGroup: AppGroup? = null
 
     /**
      * 工作流
@@ -153,7 +159,7 @@ class WorkflowNodeInstance {
     fun createJobInstance(): JobInstance {
         return JobInstance().also {
             val workflowInstance = this.workflowInstance!!
-            it.appGroup = workflowInstance.appGroup
+            it.appGroup = this.appGroup
             it.sourceId = workflowInstance.workflowId!!.toSourceId()
             it.sourceType = JobSourceTypeEnum.WORKFLOW
             it.workflowInstanceCode = workflowInstance.code

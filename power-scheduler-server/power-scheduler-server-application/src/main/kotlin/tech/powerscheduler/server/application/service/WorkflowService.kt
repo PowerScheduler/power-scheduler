@@ -18,6 +18,7 @@ import tech.powerscheduler.server.domain.workflow.WorkflowId
 import tech.powerscheduler.server.domain.workflow.WorkflowInstanceRepository
 import tech.powerscheduler.server.domain.workflow.WorkflowNodeRepository
 import tech.powerscheduler.server.domain.workflow.WorkflowRepository
+import tech.powerscheduler.server.domain.workflowgroup.WorkflowGroupRepository
 import java.time.LocalDateTime
 
 /**
@@ -28,6 +29,7 @@ import java.time.LocalDateTime
 class WorkflowService(
     private val namespaceRepository: NamespaceRepository,
     private val appGroupRepository: AppGroupRepository,
+    private val workflowGroupRepository: WorkflowGroupRepository,
     private val workflowAssembler: WorkflowAssembler,
     private val workflowNodeAssembler: WorkflowNodeAssembler,
     private val jobInstanceRepository: JobInstanceRepository,
@@ -55,13 +57,19 @@ class WorkflowService(
         validateDag(param.nodes)
         val namespace = namespaceRepository.findByCode(param.namespaceCode!!)
             ?: throw BizException("namespace not found")
-        val appGroup = appGroupRepository.findByCode(namespace, param.appCode!!)
-            ?: throw BizException("appGroup not found")
-        val workflowToSave = workflowAssembler.toDomainModel4AddRequest(appGroup = appGroup, param = param).apply {
-            this.validScheduleConfig()
-        }
+        val workflowGroup = workflowGroupRepository.findByNamespaceAndCode(
+            namespace = namespace,
+            code = param.workflowGroupCode!!
+        ) ?: throw BizException("workflowGroup not found")
+        val workflowToSave = workflowAssembler.toDomainModel4AddRequest(
+            workflowGroup = workflowGroup,
+            param = param
+        ).apply { this.validScheduleConfig() }
+        val appCodeSet = param.nodes.mapNotNull { it.appCode }.toSet()
+        val appCode2AppGroup = appGroupRepository.findByCodes(appCodeSet).associateBy { it.code!! }
         val workflowNodesToSave = workflowNodeAssembler.toDomainModel4AddRequest(
             workflow = workflowToSave,
+            appCode2AppGroup = appCode2AppGroup,
             nodes = param.nodes,
         )
         workflowToSave.workflowNodes = workflowNodesToSave
@@ -78,8 +86,11 @@ class WorkflowService(
         val workflowToSave = workflowAssembler.toDomainModel4EditRequest(workflow = workflow, param = param).apply {
             this.validScheduleConfig()
         }
+        val appCodeSet = param.nodes.mapNotNull { it.appCode }.toSet()
+        val appCode2AppGroup = appGroupRepository.findByCodes(appCodeSet).associateBy { it.code!! }
         val workflowNodesToSave = workflowNodeAssembler.toDomainModel4EditRequest(
             workflow = workflow,
+            appCode2AppGroup = appCode2AppGroup,
             nodes = param.nodes,
             existNodes = workflow.workflowNodes,
         )
@@ -132,7 +143,6 @@ class WorkflowService(
         )
         val workflowNodeInstances = workflowInstance.workflowNodeInstances.onEach {
             it.dataTime = param.dataTime
-            it.workerAddress = param.workerAddress
             it.maxAttemptCnt = 0
             it.taskMaxAttemptCnt = 0
         }

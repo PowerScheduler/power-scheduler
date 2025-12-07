@@ -19,4 +19,6 @@ interface AppGroupRepository {
 
     fun save(model: AppGroup): AppGroup
 
+    fun findByCodes(appCodes: Collection<String>): List<AppGroup>
+
 }

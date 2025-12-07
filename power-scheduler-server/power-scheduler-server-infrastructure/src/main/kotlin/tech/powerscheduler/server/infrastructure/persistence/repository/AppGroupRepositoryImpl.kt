@@ -72,4 +72,9 @@ class AppGroupRepositoryImpl(
         appGroupJpaRepository.save(entity)
         return entity.toDomainModel()
     }
+
+    override fun findByCodes(appCodes: Collection<String>): List<AppGroup> {
+        val entities = appGroupJpaRepository.findAllByCodeIn(appCodes)
+        return entities.map { it.toDomainModel() }
+    }
 }

@@ -153,7 +153,7 @@ class JobInstanceService(
             JOB -> updateJobInfo(jobInstance)
             WORKFLOW -> updateWorkflowInstance(jobInstance)
         }
-        log.info("jobInstance update successfully: id={}, status={}", jobInstanceId.value, jobInstance.jobStatus)
+        log.info("jobInstance updateProgress successfully: id={}, status={}", jobInstanceId.value, jobInstance.jobStatus)
     }
 
     private fun updateWorkflowInstance(jobInstance: JobInstance) {

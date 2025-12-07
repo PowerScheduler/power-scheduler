@@ -17,7 +17,7 @@ fun WorkflowInstance.toEntity(): WorkflowInstanceEntity {
             nodeInstanceEntity.children = workflowNodeInstance.children
                 .mapNotNullTo(mutableSetOf()) { child -> workflowNodeInstance2entity[child] }
         }
-        it.appGroupEntity = this.appGroup!!.toEntity()
+        it.workflowGroupEntity = this.workflowGroup!!.toEntity()
         it.workflowNodeInstanceEntities = workflowNodeInstance2entity.values.toSet()
         it.id = this.id?.value
         it.workflowId = this.workflowId!!.value
@@ -47,7 +47,7 @@ fun WorkflowInstanceEntity.toDomainModel(): WorkflowInstance {
                 nodeInstanceEntity2domainModel[parent]
             }
         }
-        it.appGroup = this.appGroupEntity!!.toDomainModel()
+        it.workflowGroup = this.workflowGroupEntity!!.toDomainModel()
         it.workflowNodeInstances = nodeInstanceEntity2domainModel.values.toList()
         it.id = WorkflowInstanceId(this.id!!)
         it.workflowId = WorkflowId(this.workflowId!!)

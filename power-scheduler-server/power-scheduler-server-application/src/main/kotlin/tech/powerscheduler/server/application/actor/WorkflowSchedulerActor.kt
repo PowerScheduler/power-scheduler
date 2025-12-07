@@ -184,17 +184,17 @@ class WorkflowSchedulerActor(
                 return@executeWithoutResult
             }
             // 检查当前可用机器, 如果没有可用机器，则跳过本次调度(TODO: 系统告警)
-            val appGroupKey = AppGroupKey(workflow.appGroup!!)
-            val availableWorkers = workerRegistryRepository.findAllByAppGroupKey(appGroupKey)
-            if (availableWorkers.isEmpty()) {
-                workflow.updateNextScheduleTimeWhenNoAvailableWorker()
-                workflowRepository.save(workflow)
-                log.info(
-                    "schedule workflow [{}] cancel for no available workers, nextScheduleTime={}",
-                    workflowId.value, workflow.nextScheduleAt
-                )
-                return@executeWithoutResult
-            }
+//            val appGroupKey = AppGroupKey(workflow.appGroup!!)
+//            val availableWorkers = workerRegistryRepository.findAllByAppGroupKey(appGroupKey)
+//            if (availableWorkers.isEmpty()) {
+//                workflow.updateNextScheduleTimeWhenNoAvailableWorker()
+//                workflowRepository.save(workflow)
+//                log.info(
+//                    "schedule workflow [{}] cancel for no available workers, nextScheduleTime={}",
+//                    workflowId.value, workflow.nextScheduleAt
+//                )
+//                return@executeWithoutResult
+//            }
             // 前置检查全部通过后, 正式开始调度
             val workflowInstance = workflow.createInstance()
             val rootNodeInstances = workflowInstance.workflowNodeInstances.filter { it.parents.isEmpty() }

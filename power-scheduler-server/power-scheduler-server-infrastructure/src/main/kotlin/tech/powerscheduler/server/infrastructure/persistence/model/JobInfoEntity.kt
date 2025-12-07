@@ -12,6 +12,9 @@ import java.time.LocalDateTime
 @Table(name = "job_info")
 class JobInfoEntity : BaseEntity() {
 
+    /**
+     * 应用分组
+     */
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "app_group_id", nullable = false)
     var appGroupEntity: AppGroupEntity? = null

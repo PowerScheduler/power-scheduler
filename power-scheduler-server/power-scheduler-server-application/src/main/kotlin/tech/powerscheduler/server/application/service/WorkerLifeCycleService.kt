@@ -168,7 +168,7 @@ class WorkerLifeCycleService(
         if (followingTasks.isNotEmpty()) {
             taskRepository.saveAll(followingTasks)
         }
-        log.info("updateProgress successfully: taskId={}, status={}", taskId.value, task.taskStatus)
+        log.info("task updateProgress successfully: taskId={}, status={}", taskId.value, task.taskStatus)
         applicationEventPublisher.publishEvent(taskStatusChangeEvent)
     }
 

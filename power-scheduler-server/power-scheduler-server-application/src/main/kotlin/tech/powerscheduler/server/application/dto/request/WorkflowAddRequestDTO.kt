@@ -27,10 +27,10 @@ class WorkflowAddRequestDTO {
     var namespaceCode: String? = null
 
     /**
-     * 应用编码
+     * 工作流分组编码
      */
     @NotBlank
-    var appCode: String? = null
+    var workflowGroupCode: String? = null
 
     /**
      * 工作流名称

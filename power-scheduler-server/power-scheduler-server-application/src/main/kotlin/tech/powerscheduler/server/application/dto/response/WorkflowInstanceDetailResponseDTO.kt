@@ -15,14 +15,14 @@ class WorkflowInstanceDetailResponseDTO {
     var workflowNodeInstances: List<WorkflowNodeInstanceDetailResponseDTO> = emptyList()
 
     /**
-     * 应用编码
+     * 工作流分组编码
      */
-    var appCode: String? = null
+    var workflowGroupCode: String? = null
 
     /**
-     * 应用名称
+     * 工作流分组名称
      */
-    var appName: String? = null
+    var workflowGroupName: String? = null
 
     /**
      * 工作流实例id

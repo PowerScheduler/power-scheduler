@@ -32,9 +32,9 @@ class WorkflowInstanceAssembler {
 
     fun toWorkflowInstanceQueryResponseDTO(workflowInstance: WorkflowInstance): WorkflowInstanceQueryResponseDTO {
         return WorkflowInstanceQueryResponseDTO().apply {
-            val appGroup = workflowInstance.appGroup!!
-            this.appCode = appGroup.code
-            this.appName = appGroup.name
+            val workflowGroup = workflowInstance.workflowGroup!!
+            this.appCode = workflowGroup.code
+            this.appName = workflowGroup.name
             this.id = workflowInstance.id!!.value
             this.workflowId = workflowInstance.workflowId!!.value
             this.name = workflowInstance.name
@@ -48,9 +48,9 @@ class WorkflowInstanceAssembler {
 
     fun toWorkflowInstanceDetailResponseDTO(workflowInstance: WorkflowInstance): WorkflowInstanceDetailResponseDTO {
         return WorkflowInstanceDetailResponseDTO().apply {
-            val appGroup = workflowInstance.appGroup!!
-            this.appCode = appGroup.code
-            this.appName = appGroup.name
+            val workflowGroup = workflowInstance.workflowGroup!!
+            this.workflowGroupCode = workflowGroup.code
+            this.workflowGroupName = workflowGroup.name
             this.id = workflowInstance.id!!.value
             this.workflowId = workflowInstance.workflowId!!.value
             this.name = workflowInstance.name

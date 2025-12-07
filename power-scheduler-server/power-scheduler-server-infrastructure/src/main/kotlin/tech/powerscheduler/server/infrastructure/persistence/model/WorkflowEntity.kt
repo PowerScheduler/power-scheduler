@@ -13,11 +13,11 @@ import java.time.LocalDateTime
 @Table(name = "workflow")
 class WorkflowEntity : BaseEntity() {
     /**
-     * 应用分组
+     * 工作流分组
      */
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "app_group_id", nullable = false)
-    var appGroupEntity: AppGroupEntity? = null
+    @JoinColumn(name = "workflow_group_id", nullable = false)
+    var workflowGroupEntity: WorkflowGroupEntity? = null
 
     @OneToMany(
         mappedBy = "workflowEntity",

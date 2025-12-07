@@ -15,11 +15,6 @@ class WorkflowRunRequestDTO {
     var workflowId: Long? = null
 
     /**
-     * Worker地址（ip:host）
-     */
-    var workerAddress: String? = null
-
-    /**
      * 数据时间
      */
     var dataTime: LocalDateTime? = LocalDateTime.now()

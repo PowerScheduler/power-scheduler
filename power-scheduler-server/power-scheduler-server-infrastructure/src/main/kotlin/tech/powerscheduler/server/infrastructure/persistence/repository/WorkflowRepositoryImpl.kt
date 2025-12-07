@@ -12,9 +12,9 @@ import tech.powerscheduler.server.domain.workflow.Workflow
 import tech.powerscheduler.server.domain.workflow.WorkflowId
 import tech.powerscheduler.server.domain.workflow.WorkflowQuery
 import tech.powerscheduler.server.domain.workflow.WorkflowRepository
-import tech.powerscheduler.server.infrastructure.persistence.model.AppGroupEntity
 import tech.powerscheduler.server.infrastructure.persistence.model.NamespaceEntity
 import tech.powerscheduler.server.infrastructure.persistence.model.WorkflowEntity
+import tech.powerscheduler.server.infrastructure.persistence.model.WorkflowGroupEntity
 import tech.powerscheduler.server.infrastructure.persistence.repository.impl.WorkflowJpaRepository
 import tech.powerscheduler.server.infrastructure.utils.toDomainModel
 import tech.powerscheduler.server.infrastructure.utils.toDomainPage
@@ -76,19 +76,19 @@ class WorkflowRepositoryImpl(
             Sort.by(WorkflowEntity::id.name).descending()
         )
         val specification = Specification<WorkflowEntity> { root, _, criteriaBuilder ->
-            val joinAppGroup = root.join<WorkflowEntity, AppGroupEntity>(
-                WorkflowEntity::appGroupEntity.name,
+            val joinWorkflowGroup = root.join<WorkflowEntity, WorkflowGroupEntity>(
+                WorkflowEntity::workflowGroupEntity.name,
                 JoinType.INNER,
             )
-            val joinNamespace = joinAppGroup.join<AppGroupEntity, NamespaceEntity>(
-                AppGroupEntity::namespaceEntity.name,
+            val joinNamespace = joinWorkflowGroup.join<WorkflowGroupEntity, NamespaceEntity>(
+                WorkflowGroupEntity::namespaceEntity.name,
                 JoinType.INNER,
             )
             val namespaceCodeEqual = query.namespaceCode.let {
                 criteriaBuilder.equal(joinNamespace.get<String>(NamespaceEntity::code.name), it)
             }
-            val appCodeEqual = query.appCode.takeUnless { it.isNullOrBlank() }?.let {
-                criteriaBuilder.equal(joinAppGroup.get<String>(AppGroupEntity::code.name), it)
+            val appCodeEqual = query.workflowGroupCode.takeUnless { it.isNullOrBlank() }?.let {
+                criteriaBuilder.equal(joinWorkflowGroup.get<String>(WorkflowGroupEntity::code.name), it)
             }
             val nameLike = query.name.takeUnless { it.isNullOrBlank() }?.let {
                 criteriaBuilder.like(root.get(WorkflowEntity::name.name), "%$it%")

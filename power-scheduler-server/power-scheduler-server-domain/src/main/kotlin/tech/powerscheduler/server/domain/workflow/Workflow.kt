@@ -2,8 +2,8 @@ package tech.powerscheduler.server.domain.workflow
 
 import tech.powerscheduler.common.enums.RetentionPolicyEnum
 import tech.powerscheduler.common.enums.WorkflowStatusEnum
-import tech.powerscheduler.server.domain.appgroup.AppGroup
 import tech.powerscheduler.server.domain.common.Schedulable
+import tech.powerscheduler.server.domain.workflowgroup.WorkflowGroup
 import java.time.LocalDateTime
 import java.util.*
 
@@ -14,9 +14,9 @@ import java.util.*
 class Workflow : Schedulable() {
 
     /**
-     * 应用分组
+     * 工作流分组
      */
-    var appGroup: AppGroup? = null
+    var workflowGroup: WorkflowGroup? = null
 
     /**
      * 工作流节点
@@ -105,8 +105,8 @@ class Workflow : Schedulable() {
             val nodeInstances = workflowNode2Instance.values.toList()
             val nodeCode2NodeInstance = nodeInstances.associateBy { nodeInstance -> nodeInstance.nodeCode }
 
+            it.workflowGroup = this.workflowGroup
             it.code = UUID.randomUUID().toString()
-            it.appGroup = this.appGroup
             it.workflowId = this.id
             it.workflowNodeInstances = nodeInstances
             it.name = this.name

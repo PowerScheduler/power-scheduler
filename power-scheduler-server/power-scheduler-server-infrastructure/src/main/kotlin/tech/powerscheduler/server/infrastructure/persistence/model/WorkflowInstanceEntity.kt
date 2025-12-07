@@ -15,11 +15,11 @@ import java.time.LocalDateTime
 class WorkflowInstanceEntity : BaseEntity() {
 
     /**
-     * 应用分组
+     * 工作流分组
      */
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "app_group_id", nullable = false)
-    var appGroupEntity: AppGroupEntity? = null
+    @JoinColumn(name = "workflow_group_id", nullable = false)
+    var workflowGroupEntity: WorkflowGroupEntity? = null
 
     /**
      * 工作流节点实例列表

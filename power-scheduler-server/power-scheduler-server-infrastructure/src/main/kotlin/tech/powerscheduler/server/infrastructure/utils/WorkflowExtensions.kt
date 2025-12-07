@@ -13,7 +13,7 @@ import tech.powerscheduler.server.infrastructure.persistence.model.WorkflowNodeE
  */
 fun Workflow.toEntity(): WorkflowEntity {
     return WorkflowEntity().also {
-        it.appGroupEntity = this.appGroup!!.toEntity()
+        it.workflowGroupEntity = this.workflowGroup!!.toEntity()
         val workflowNodeDomainModel2entity = this.workflowNodes.associateWith { node -> node.toEntity() }
         for (workflowNode in this.workflowNodes) {
             val workflowNodeEntity = workflowNodeDomainModel2entity[workflowNode]!!
@@ -54,7 +54,7 @@ fun WorkflowEntity.toDomainModel(): Workflow {
                 .toSet()
         }
 
-        it.appGroup = this.appGroupEntity!!.toDomainModel()
+        it.workflowGroup = this.workflowGroupEntity!!.toDomainModel()
         it.workflowNodes = workflowNodeEntity2Model.values.toList()
         it.id = WorkflowId(this.id!!)
         it.name = this.name

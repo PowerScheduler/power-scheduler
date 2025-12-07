@@ -1,13 +1,14 @@
 package tech.powerscheduler.server.application.dto.request
 
 import jakarta.validation.constraints.NotBlank
-import tech.powerscheduler.common.dto.request.PageQueryRequestDTO
 
 /**
+ * 工作流分组查询请求参数
+ *
  * @author grayrat
- * @since 2025/6/23
+ * @since 2025/12/7
  */
-class WorkflowQueryRequestDTO : PageQueryRequestDTO() {
+class WorkflowGroupQueryRequestDTO {
     /**
      * 命名空间编码
      */
@@ -15,12 +16,12 @@ class WorkflowQueryRequestDTO : PageQueryRequestDTO() {
     var namespaceCode: String? = null
 
     /**
-     * 应用编码
+     * 工作流分组编码
      */
-    var workflowGroupCode: String? = null
+    var code: String? = null
 
     /**
-     * 工作流名称
+     * 工作流分组名称
      */
     var name: String? = null
 }

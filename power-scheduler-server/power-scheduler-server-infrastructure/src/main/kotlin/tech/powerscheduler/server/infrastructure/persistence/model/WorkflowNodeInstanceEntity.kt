@@ -14,6 +14,14 @@ import java.time.LocalDateTime
 @Entity
 @Table(name = "workflow_node_instance")
 class WorkflowNodeInstanceEntity : BaseEntity() {
+
+    /**
+     * 应用分组
+     */
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "app_group_id", nullable = false)
+    var appGroupEntity: AppGroupEntity? = null
+
     /**
      * 子节点
      */

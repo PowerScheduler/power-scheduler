@@ -2,7 +2,7 @@ package tech.powerscheduler.server.domain.workflow
 
 import tech.powerscheduler.common.enums.ScheduleTypeEnum
 import tech.powerscheduler.common.enums.WorkflowStatusEnum
-import tech.powerscheduler.server.domain.appgroup.AppGroup
+import tech.powerscheduler.server.domain.workflowgroup.WorkflowGroup
 import java.time.LocalDateTime
 
 /**
@@ -11,9 +11,9 @@ import java.time.LocalDateTime
  */
 class WorkflowInstance {
     /**
-     * 应用分组
+     * 工作流分组
      */
-    var appGroup: AppGroup? = null
+    var workflowGroup: WorkflowGroup? = null
 
     /**
      * 工作流节点实例列表

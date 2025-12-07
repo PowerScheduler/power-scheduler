@@ -20,6 +20,12 @@ class WorkflowNodeDTO {
     var workflowNodeChildCodes: Set<String> = emptySet()
 
     /**
+     * 应用编码
+     */
+    @NotBlank
+    var appCode: String? = null
+
+    /**
      * 任务名称
      */
     @NotBlank

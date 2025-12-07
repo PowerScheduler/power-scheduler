@@ -4,6 +4,7 @@ import tech.powerscheduler.common.enums.ExecuteModeEnum
 import tech.powerscheduler.common.enums.JobTypeEnum
 import tech.powerscheduler.common.enums.ScriptTypeEnum
 import tech.powerscheduler.common.enums.WorkflowStatusEnum
+import tech.powerscheduler.server.domain.appgroup.AppGroup
 import java.time.LocalDateTime
 import java.util.*
 
@@ -18,6 +19,11 @@ class WorkflowNode {
      * 工作流
      */
     var workflow: Workflow? = null
+
+    /**
+     * 应用分组
+     */
+    var appGroup: AppGroup? = null
 
     /**
      * 父节点集合
@@ -127,6 +133,7 @@ class WorkflowNode {
     fun createInstance(workflowInstance: WorkflowInstance): WorkflowNodeInstance {
         return WorkflowNodeInstance().also {
             it.workflowInstance = workflowInstance
+            it.appGroup = this.appGroup
             it.nodeCode = this.code
             it.nodeInstanceCode = UUID.randomUUID().toString()
             it.name = this.name
