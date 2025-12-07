@@ -14,12 +14,12 @@ import java.util.concurrent.TimeUnit;
  */
 @Slf4j
 @Component
-public class JavaProcessorDemo extends JavaProcessor {
+public class ShortTimeProcessorDemo extends JavaProcessor {
 
     @Override
     public ProcessResult process(TaskContext context) throws InterruptedException {
         log.info("job start");
-        TimeUnit.SECONDS.sleep(60);
+        TimeUnit.SECONDS.sleep(20);
         log.info("job complete");
         return ProcessResult.success();
     }
