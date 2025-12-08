@@ -26,6 +26,8 @@ interface JobInstanceRepository {
 
     fun findByWorkflowNodeInstanceCode(workflowNodeInstanceCode: String): JobInstance?
 
+    fun findAllByWorkflowNodeInstanceCodes(workflowNodeInstanceCodes: Collection<String>): List<JobInstance>
+
     fun pageQuery(query: JobInstanceQuery): Page<JobInstance>
 
     fun save(jobInstance: JobInstance): JobInstanceId

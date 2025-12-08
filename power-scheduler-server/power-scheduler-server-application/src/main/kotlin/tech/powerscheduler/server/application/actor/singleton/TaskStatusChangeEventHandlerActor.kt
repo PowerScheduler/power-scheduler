@@ -124,7 +124,7 @@ class TaskStatusChangeEventHandlerActor(
     private fun doHandleEvent(event: TaskStatusChangeEvent) {
         val jobInstanceId = JobInstanceId(event.jobInstanceId)
         val jobInstance = jobInstanceRepository.findById(jobInstanceId)!!
-        val tasks = taskRepository.findAllByJobInstanceIdAndBatchAndTaskType(
+        val tasks = taskRepository.findAllByJobInstanceIdAndBatch(
             jobInstanceId = jobInstance.id!!,
             batch = jobInstance.batch!!,
         )

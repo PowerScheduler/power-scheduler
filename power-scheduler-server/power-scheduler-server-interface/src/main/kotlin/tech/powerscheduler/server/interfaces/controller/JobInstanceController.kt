@@ -43,7 +43,7 @@ internal class JobInstanceController(
 
     @Operation(summary = "终止任务")
     @PostMapping("/terminate")
-    fun terminate(jobInstanceId: Long) = wrapperResponse {
+    fun terminateJobInstance(jobInstanceId: Long) = wrapperResponse {
         jobInstanceService.terminate(jobInstanceId)
     }
 

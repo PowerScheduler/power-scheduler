@@ -21,17 +21,12 @@ import tech.powerscheduler.server.application.dto.request.JobRunRequestDTO
 import tech.powerscheduler.server.application.dto.response.JobInstanceDetailResponseDTO
 import tech.powerscheduler.server.application.dto.response.JobInstanceQueryResponseDTO
 import tech.powerscheduler.server.application.dto.response.JobProgressQueryResponseDTO
-import tech.powerscheduler.server.application.utils.JSON
 import tech.powerscheduler.server.application.utils.toDTO
 import tech.powerscheduler.server.domain.common.PageQuery
-import tech.powerscheduler.server.domain.domainevent.AggregateTypeEnum
-import tech.powerscheduler.server.domain.domainevent.DomainEvent
-import tech.powerscheduler.server.domain.domainevent.DomainEventRepository
-import tech.powerscheduler.server.domain.domainevent.DomainEventTypeEnum
 import tech.powerscheduler.server.domain.job.*
 import tech.powerscheduler.server.domain.task.TaskRepository
 import tech.powerscheduler.server.domain.workflow.WorkflowInstanceRepository
-import tech.powerscheduler.server.domain.workflow.WorkflowNodeInstanceStatusChangeEvent
+import tech.powerscheduler.server.domain.workflow.WorkflowRepository
 import java.time.LocalDateTime
 
 /**
@@ -47,7 +42,7 @@ class JobInstanceService(
     private val jobInfoRepository: JobInfoRepository,
     private val jobInstanceRepository: JobInstanceRepository,
     private val jobInstanceAssembler: JobInstanceAssembler,
-    private val domainEventRepository: DomainEventRepository,
+    private val workflowRepository: WorkflowRepository,
     private val workflowInstanceRepository: WorkflowInstanceRepository,
     private val applicationEventPublisher: ApplicationEventPublisher,
 ) {
@@ -138,7 +133,7 @@ class JobInstanceService(
             log.info("updateProgress cancel, jobInstance [{}] is [{}]", jobInstanceId.value, jobInstance.jobStatus)
             return
         }
-        val tasks = taskRepository.findAllByJobInstanceIdAndBatchAndTaskType(
+        val tasks = taskRepository.findAllByJobInstanceIdAndBatch(
             jobInstanceId = jobInstanceId,
             batch = jobInstance.batch!!
         )
@@ -153,10 +148,15 @@ class JobInstanceService(
             JOB -> updateJobInfo(jobInstance)
             WORKFLOW -> updateWorkflowInstance(jobInstance)
         }
-        log.info("jobInstance updateProgress successfully: id={}, status={}", jobInstanceId.value, jobInstance.jobStatus)
+        log.info(
+            "jobInstance updateProgress successfully: id={}, status={}",
+            jobInstanceId.value,
+            jobInstance.jobStatus
+        )
     }
 
-    private fun updateWorkflowInstance(jobInstance: JobInstance) {
+    @Transactional
+    fun updateWorkflowInstance(jobInstance: JobInstance) {
         val workflowInstanceCode = jobInstance.workflowInstanceCode!!
         val workflowNodeInstanceCode = jobInstance.workflowNodeInstanceCode
         val workflowInstance = workflowInstanceRepository.lockByCode(workflowInstanceCode)
@@ -177,23 +177,28 @@ class JobInstanceService(
             this.workerAddress = jobInstance.workerAddress
         }
         workflowInstance.apply {
+            this.updateProgress()
             this.graphData!!.mapNotNull { it.data }
                 .find { it.workflowNodeInstanceCode == workflowNodeInstanceCode }
                 ?.also { it.status = workflowNodeInstance.status }
         }
+        if (workflowInstance.status == WorkflowStatusEnum.RUNNING) {
+            val nextWorkflowNodeInstances = workflowInstance.workflowNodeInstances
+                .filter { it.status == WorkflowStatusEnum.WAITING }
+                .filter { it.parents.all { parent -> parent.status == WorkflowStatusEnum.SUCCESS } }
+            val jobInstances = nextWorkflowNodeInstances.map { it.createJobInstance() }
+            if (jobInstances.isNotEmpty()) {
+                jobInstanceRepository.saveAll(jobInstances)
+                log.info("nodeInstance {} is ready to run", nextWorkflowNodeInstances.map { it.id!!.value })
+            }
+        }
+        if (workflowInstance.status in WorkflowStatusEnum.COMPLETED_STATUSES) {
+            val workflow = workflowRepository.lockById(workflowInstance.workflowId!!) ?: return
+            workflow.lastCompletedAt = LocalDateTime.now()
+            workflow.updateNextScheduleTime()
+            workflowRepository.save(workflow)
+        }
         workflowInstanceRepository.save(workflowInstance)
-        val workflowInstanceId = workflowInstance.id!!
-        val domainEvent = DomainEvent.create(
-            aggregateId = workflowInstanceId.value.toString(),
-            aggregateType = AggregateTypeEnum.WORKFLOW_INSTANCE,
-            eventType = DomainEventTypeEnum.WORKFLOW_NODE_INSTANCE_STATUS_CHANGED,
-            body = JSON.writeValueAsString(WorkflowNodeInstanceStatusChangeEvent.create(workflowInstanceId))
-        )
-        domainEventRepository.save(domainEvent)
-        log.info(
-            "workflowNodeInstance update successfully: id={}, status={}",
-            workflowNodeInstance.id!!.value, workflowNodeInstance.status
-        )
     }
 
     private fun updateJobInfo(jobInstance: JobInstance) {

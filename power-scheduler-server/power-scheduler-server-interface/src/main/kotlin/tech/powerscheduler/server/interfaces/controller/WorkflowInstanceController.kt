@@ -44,6 +44,12 @@ class WorkflowInstanceController(
         return@wrapperResponse workflowInstanceService.queryProgress(param!!)
     }
 
+    @Operation(summary = "终止任务")
+    @PostMapping("/terminate")
+    fun terminateWorkflowInstance(@NotNull workflowInstanceId: Long?) = wrapperResponse {
+        return@wrapperResponse workflowInstanceService.terminate(workflowInstanceId!!)
+    }
+
     @Operation(summary = "重跑任务")
     @PostMapping("/retry")
     fun retryWorkflow(@NotNull workflowInstanceId: Long?) = wrapperResponse {

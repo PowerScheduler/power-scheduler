@@ -17,7 +17,7 @@ class WorkflowInstanceQuery : PageQuery() {
     /**
      * 应用编码
      */
-    var appCode: String? = null
+    var workflowGroupCode: String? = null
 
     /**
      * 工作流id

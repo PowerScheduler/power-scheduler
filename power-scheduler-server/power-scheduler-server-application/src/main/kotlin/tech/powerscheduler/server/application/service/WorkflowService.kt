@@ -39,6 +39,8 @@ class WorkflowService(
     private val transactionTemplate: TransactionTemplate,
 ) {
 
+    private enum class VisitState { UNVISITED, VISITING, VISITED }
+
     @Transactional
     fun list(param: WorkflowQueryRequestDTO): PageDTO<WorkflowQueryResponseDTO> {
         val query = workflowAssembler.toDomainQuery(param)
@@ -151,8 +153,6 @@ class WorkflowService(
         jobInstanceRepository.saveAll(jobInstances)
         return workflowInstanceId.value
     }
-
-    private enum class VisitState { UNVISITED, VISITING, VISITED }
 
     fun validateDag(nodes: List<WorkflowNodeDTO>) {
         if (nodes.size < 2) {

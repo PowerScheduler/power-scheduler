@@ -21,7 +21,7 @@ class WorkflowInstanceAssembler {
             this.pageNo = param.pageNo
             this.pageSize = param.pageSize
             this.namespaceCode = param.namespaceCode
-            this.appCode = param.appCode
+            this.workflowGroupCode = param.workflowGroupCode
             this.workflowId = param.workflowId
             this.workflowInstanceId = param.workflowInstanceId
             this.status = param.status

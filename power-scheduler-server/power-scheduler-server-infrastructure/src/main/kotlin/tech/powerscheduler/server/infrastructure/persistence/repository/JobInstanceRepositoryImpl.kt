@@ -58,6 +58,11 @@ class JobInstanceRepositoryImpl(
         return entity?.toDomainModel()
     }
 
+    override fun findAllByWorkflowNodeInstanceCodes(workflowNodeInstanceCodes: Collection<String>): List<JobInstance> {
+        val entities = jobInstanceJpaRepository.findAllByWorkflowNodeInstanceCodeIn(workflowNodeInstanceCodes)
+        return entities.map { it.toDomainModel() }
+    }
+
     override fun pageQuery(query: JobInstanceQuery): Page<JobInstance> {
         val pageable = PageRequest.of(
             query.pageNo - 1, query.pageSize, Sort.by(JobInstanceEntity::id.name).descending()

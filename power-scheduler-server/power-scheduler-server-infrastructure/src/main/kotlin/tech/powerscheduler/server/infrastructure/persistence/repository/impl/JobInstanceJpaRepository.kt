@@ -23,6 +23,8 @@ interface JobInstanceJpaRepository :
 
     fun findByWorkflowNodeInstanceCode(workflowNodeInstanceCode: String): JobInstanceEntity?
 
+    fun findAllByWorkflowNodeInstanceCodeIn(workflowNodeInstanceCodes: Collection<String>): List<JobInstanceEntity>
+
     @Query(
         """
         SELECT j.jobStatus, COUNT(j)

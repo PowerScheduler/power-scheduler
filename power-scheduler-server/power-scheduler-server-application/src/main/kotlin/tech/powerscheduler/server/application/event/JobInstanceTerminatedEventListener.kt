@@ -35,7 +35,7 @@ class JobInstanceTerminatedEventListener(
             this.jobInstanceId = jobInstanceId.value
         }
         val jobInstance = jobInstanceRepository.findById(jobInstanceId) ?: return
-        val tasks = taskRepository.findAllByJobInstanceIdAndBatchAndTaskType(
+        val tasks = taskRepository.findAllByJobInstanceIdAndBatch(
             jobInstanceId = jobInstanceId,
             batch = jobInstance.batch!!,
         )

@@ -122,7 +122,7 @@ class WorkflowRepositoryImpl(
         ids: List<WorkflowId>,
         baseTime: LocalDateTime
     ): List<Workflow> {
-        val nextScheduleAt = baseTime.plusSeconds(10)
+        val nextScheduleAt = baseTime.plusSeconds(0)
         val specification = Specification<WorkflowEntity> { root, _, cb ->
             val idIn = root.get<Long>(WorkflowEntity::id.name).`in`(ids.map { it.value })
             val isEnabled = cb.equal(root.get<Boolean>(WorkflowEntity::enabled.name), true)

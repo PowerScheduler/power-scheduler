@@ -66,7 +66,7 @@ class TaskRepositoryRepositoryImpl(
         return entities.map { it.toDomainModel() }.toDomainPage()
     }
 
-    override fun findAllByJobInstanceIdAndBatchAndTaskType(
+    override fun findAllByJobInstanceIdAndBatch(
         jobInstanceId: JobInstanceId,
         batch: Int
     ): List<Task> {

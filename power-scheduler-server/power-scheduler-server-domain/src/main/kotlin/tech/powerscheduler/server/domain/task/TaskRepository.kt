@@ -26,7 +26,7 @@ interface TaskRepository {
         pageQuery: PageQuery
     ): Page<Task>
 
-    fun findAllByJobInstanceIdAndBatchAndTaskType(
+    fun findAllByJobInstanceIdAndBatch(
         jobInstanceId: JobInstanceId,
         batch: Int,
     ): List<Task>

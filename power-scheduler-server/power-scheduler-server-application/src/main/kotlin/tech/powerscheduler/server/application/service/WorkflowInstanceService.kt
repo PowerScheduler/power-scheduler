@@ -1,8 +1,10 @@
 package tech.powerscheduler.server.application.service
 
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import tech.powerscheduler.common.dto.response.PageDTO
+import tech.powerscheduler.common.enums.JobStatusEnum.*
 import tech.powerscheduler.common.enums.TaskTypeEnum
 import tech.powerscheduler.common.exception.BizException
 import tech.powerscheduler.server.application.assembler.TaskAssembler
@@ -15,6 +17,7 @@ import tech.powerscheduler.server.application.dto.response.WorkflowInstanceQuery
 import tech.powerscheduler.server.application.utils.toDTO
 import tech.powerscheduler.server.domain.common.PageQuery
 import tech.powerscheduler.server.domain.job.JobInstanceRepository
+import tech.powerscheduler.server.domain.job.JobInstanceTerminatedEvent
 import tech.powerscheduler.server.domain.task.TaskRepository
 import tech.powerscheduler.server.domain.workflow.*
 import java.time.LocalDateTime
@@ -32,6 +35,7 @@ class WorkflowInstanceService(
     private val workflowNodeInstanceRepository: WorkflowNodeInstanceRepository,
     private val taskAssembler: TaskAssembler,
     private val workflowInstanceAssembler: WorkflowInstanceAssembler,
+    private val applicationEventPublisher: ApplicationEventPublisher,
 ) {
 
     fun list(param: WorkflowInstanceQueryRequestDTO): PageDTO<WorkflowInstanceQueryResponseDTO> {
@@ -63,6 +67,28 @@ class WorkflowInstanceService(
             }
         )
         return page.toDTO().map { taskAssembler.toJobProgressQueryResponseDTO(it) }
+    }
+
+    @Transactional
+    fun terminate(workflowInstanceId: Long) {
+        val workflowInstance = workflowInstanceRepository.findById(WorkflowInstanceId(workflowInstanceId))
+            ?: throw BizException("WorkflowInstance not found")
+        val workflowNodeInstances = workflowInstance.workflowNodeInstances
+        val nodeInstanceCodes = workflowNodeInstances.mapNotNull { it.nodeInstanceCode }
+        val jobInstances = jobInstanceRepository.findAllByWorkflowNodeInstanceCodes(nodeInstanceCodes)
+
+        workflowInstance.terminate()
+        val terminatedEvents = jobInstances.map { jobInstance ->
+            when (jobInstance.jobStatus!!) {
+                WAITING_SCHEDULE, WAITING_DISPATCH, PENDING, PROCESSING -> jobInstance.terminate()
+                FAILED, SUCCESS -> {}
+            }
+            JobInstanceTerminatedEvent(jobInstanceId = jobInstance.id!!)
+        }
+
+        workflowInstanceRepository.save(workflowInstance)
+        jobInstanceRepository.saveAll(jobInstances)
+        terminatedEvents.forEach { applicationEventPublisher.publishEvent(it) }
     }
 
     @Transactional

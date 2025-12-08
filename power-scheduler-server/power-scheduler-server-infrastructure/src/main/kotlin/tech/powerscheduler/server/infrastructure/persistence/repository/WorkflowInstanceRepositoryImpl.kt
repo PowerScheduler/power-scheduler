@@ -66,7 +66,7 @@ class WorkflowInstanceRepositoryImpl(
             val namespaceCodeEquals = criteriaBuilder.equal(
                 namespaceJoin.get<String>(NamespaceEntity::code.name), query.namespaceCode
             )
-            val appCodeEqual = query.appCode.takeUnless { it.isNullOrBlank() }?.let {
+            val workflowGroupCodeEqual = query.workflowGroupCode.takeUnless { it.isNullOrBlank() }?.let {
                 criteriaBuilder.equal(workflowGroupJoin.get<String>(WorkflowGroupEntity::code.name), it)
             }
             val workflowIdEqual = query.workflowId?.let {
@@ -78,14 +78,14 @@ class WorkflowInstanceRepositoryImpl(
             val statusEqual = query.status?.let {
                 criteriaBuilder.equal(root.get<WorkflowStatusEnum>(WorkflowInstanceEntity::status.name), it)
             }
-            val startAtBetween = query.startAtRange?.let {
+            val startAtBetween = query.startAtRange?.takeIf { it.size == 2 }?.let {
                 criteriaBuilder.between(root.get(JobInstanceEntity::startAt.name), it[0], it[1])
             }
-            val endAtBetween = query.endAtRange?.let {
+            val endAtBetween = query.endAtRange?.takeIf { it.size == 2 }?.let {
                 criteriaBuilder.between(root.get(JobInstanceEntity::endAt.name), it[0], it[1])
             }
             val predicates = listOfNotNull(
-                namespaceCodeEquals,
+                namespaceCodeEquals, workflowGroupCodeEqual,
                 workflowIdEqual, workflowInstanceIdEqual, statusEqual,
                 startAtBetween, endAtBetween
             )
