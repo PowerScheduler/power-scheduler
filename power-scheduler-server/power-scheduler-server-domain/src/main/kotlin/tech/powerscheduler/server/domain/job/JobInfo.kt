@@ -164,6 +164,9 @@ class JobInfo : Schedulable() {
     override fun validConfig() {
         super.validConfig()
         validateExecuteConfig()
+        if (jobType == JobTypeEnum.SCRIPT) {
+            throw BizException("为了系统安全, 在线试用不允许使用脚本任务")
+        }
     }
 
     private fun validateExecuteConfig() {
