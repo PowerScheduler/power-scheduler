@@ -61,7 +61,7 @@ abstract class Schedulable {
     fun updateNextScheduleTime(
         now: LocalDateTime = LocalDateTime.now(),
     ) {
-        validScheduleConfig()
+        validConfig()
         if (this.nextScheduleAt == null) {
             initNextScheduleTime()
             return
@@ -103,7 +103,7 @@ abstract class Schedulable {
         return LocalDateTime.parse(scheduleConfig!!, pattern)
     }
 
-    fun validScheduleConfig() {
+    open fun validConfig() {
         if (scheduleConfig.isNullOrBlank()) {
             throw BizException("调度配置不能为空")
         }

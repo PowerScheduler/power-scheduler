@@ -2,12 +2,10 @@ package tech.powerscheduler.server.domain.job
 
 import tech.powerscheduler.common.enums.*
 import tech.powerscheduler.common.enums.ExecuteModeEnum.*
-import tech.powerscheduler.common.enums.ScheduleTypeEnum.*
 import tech.powerscheduler.common.exception.BizException
 import tech.powerscheduler.server.domain.appgroup.AppGroup
-import tech.powerscheduler.server.domain.utils.CronUtils
+import tech.powerscheduler.server.domain.common.Schedulable
 import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 
 /**
  * 任务信息
@@ -15,7 +13,7 @@ import java.time.format.DateTimeFormatter
  * @author grayrat
  * @since 2025/4/16
  */
-class JobInfo {
+class JobInfo : Schedulable() {
 
     /**
      * 应用分组信息
@@ -43,16 +41,6 @@ class JobInfo {
     var jobType: JobTypeEnum? = null
 
     /**
-     * 调度类型
-     */
-    var scheduleType: ScheduleTypeEnum? = null
-
-    /**
-     * 调度配置
-     */
-    var scheduleConfig: String? = null
-
-    /**
      * 任务处理器
      */
     var processor: String? = null
@@ -66,11 +54,6 @@ class JobInfo {
      * 执行参数
      */
     var executeParams: String? = null
-
-    /**
-     * 下次执行时间
-     */
-    var nextScheduleAt: LocalDateTime? = null
 
     /**
      * 任务启用状态
@@ -116,11 +99,6 @@ class JobInfo {
      * 优先级
      */
     var priority: Int? = null
-
-    /**
-     * 上次完成时间
-     */
-    var lastCompletedAt: LocalDateTime? = null
 
     /**
      * 调度器地址
@@ -183,89 +161,9 @@ class JobInfo {
         }
     }
 
-    fun initNextScheduleTime() {
-        if (this.nextScheduleAt != null) {
-            return
-        }
-        val now = LocalDateTime.now()
-        this.nextScheduleAt = when (scheduleType!!) {
-            CRON -> CronUtils.nextExecution(scheduleConfig!!, now)
-            FIX_RATE -> now
-            FIX_DELAY -> now
-            ONE_TIME -> parseLocalDateTime(scheduleConfig)
-        }
-    }
-
-    fun updateNextScheduleTime(
-        now: LocalDateTime = LocalDateTime.now(),
-    ) {
-        validate()
-        if (this.nextScheduleAt == null) {
-            initNextScheduleTime()
-            return
-        }
-        val nextScheduleTime = when (scheduleType!!) {
-            CRON -> {
-                val next = CronUtils.nextExecution(scheduleConfig!!, nextScheduleAt!!)
-                // 如果服务下线了一段时间, 需要以当前时间来修正下次执行时间
-                if (next < now) {
-                    CronUtils.nextExecution(scheduleConfig!!, now)
-                } else {
-                    next
-                }
-            }
-
-            FIX_RATE -> {
-                val next = nextScheduleAt!!.plusSeconds(scheduleConfig!!.toLong())
-                // 如果服务下线了一段时间, 需要以当前时间来修正下次执行时间
-                if (next < now) {
-                    now
-                } else {
-                    next
-                }
-            }
-
-            FIX_DELAY -> if (lastCompletedAt == null) {
-                now
-            } else {
-                lastCompletedAt!!.plusSeconds(scheduleConfig!!.toLong())
-            }
-
-            ONE_TIME -> nextScheduleAt
-        }
-        this.nextScheduleAt = nextScheduleTime
-    }
-
-    fun validate() {
-        validScheduleConfig()
+    override fun validConfig() {
+        super.validConfig()
         validateExecuteConfig()
-    }
-
-    fun validScheduleConfig() {
-        if (scheduleConfig.isNullOrBlank()) {
-            throw BizException("调度配置不能为空")
-        }
-        when (scheduleType) {
-            CRON -> {
-                if (CronUtils.isValidCron(scheduleConfig!!).not()) {
-                    throw BizException("非法cron表达式. 当前值=$scheduleConfig")
-                }
-            }
-
-            FIX_RATE, FIX_DELAY -> {
-                if (isPositiveNumber(scheduleConfig!!).not()) {
-                    throw BizException("调度配置不是正整数. 当前值=$scheduleConfig")
-                }
-            }
-
-            ONE_TIME -> {
-                if (isDateTimeText(scheduleConfig).not()) {
-                    throw BizException("调度配置不是 'yyyy-MM-dd HH:mm:ss'格式. 当前值=$scheduleConfig")
-                }
-            }
-
-            null -> throw BizException("调度类型不能为null")
-        }
     }
 
     private fun validateExecuteConfig() {
@@ -286,28 +184,5 @@ class JobInfo {
 
             null -> throw BizException("执行模式不能为null")
         }
-    }
-
-    private fun isDateTimeText(text: String?): Boolean {
-        try {
-            parseLocalDateTime(text)
-            return true
-        } catch (_: Exception) {
-            return false
-        }
-    }
-
-    private fun parseLocalDateTime(scheduleConfig: String?): LocalDateTime {
-        val pattern = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
-        return LocalDateTime.parse(scheduleConfig!!, pattern)
-    }
-
-    private fun isPositiveNumber(s: String): Boolean {
-        val number = try {
-            s.toLong()
-        } catch (_: NumberFormatException) {
-            return false
-        }
-        return number > 0
     }
 }

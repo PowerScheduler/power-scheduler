@@ -66,7 +66,7 @@ class WorkflowService(
         val workflowToSave = workflowAssembler.toDomainModel4AddRequest(
             workflowGroup = workflowGroup,
             param = param
-        ).apply { this.validScheduleConfig() }
+        ).apply { this.validConfig() }
         val appCodeSet = param.nodes.mapNotNull { it.appCode }.toSet()
         val appCode2AppGroup = appGroupRepository.findByCodes(appCodeSet).associateBy { it.code!! }
         val workflowNodesToSave = workflowNodeAssembler.toDomainModel4AddRequest(
@@ -86,7 +86,7 @@ class WorkflowService(
         val workflow = workflowRepository.findById(workflowId)
             ?: throw BizException("Workflow not found")
         val workflowToSave = workflowAssembler.toDomainModel4EditRequest(workflow = workflow, param = param).apply {
-            this.validScheduleConfig()
+            this.validConfig()
         }
         val appCodeSet = param.nodes.mapNotNull { it.appCode }.toSet()
         val appCode2AppGroup = appGroupRepository.findByCodes(appCodeSet).associateBy { it.code!! }
