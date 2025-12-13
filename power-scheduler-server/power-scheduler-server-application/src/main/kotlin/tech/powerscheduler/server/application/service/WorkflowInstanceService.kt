@@ -92,13 +92,13 @@ class WorkflowInstanceService(
     }
 
     @Transactional
-    fun retry(workflowInstanceId: Long) {
+    fun retry(workflowInstanceId: Long): Long {
         val oldWorkflowInstance = workflowInstanceRepository.findById(WorkflowInstanceId(workflowInstanceId))
-            ?: throw BizException("WorkflowInstance not found")
-        val workflow = (workflowRepository.findById(oldWorkflowInstance.workflowId!!)
-            ?: throw BizException("WorkflowInstance not found"))
+            ?: throw BizException("WorkflowInstance [$workflowInstanceId] not found")
+        val workflow = workflowRepository.findById(oldWorkflowInstance.workflowId!!)
+            ?: throw BizException("Workflow [${oldWorkflowInstance.workflowId}] not found")
         val workflowInstance = workflow.createInstance(
-            scheduleAt = oldWorkflowInstance.dataTime ?: LocalDateTime.now(),
+            scheduleAt = LocalDateTime.now(),
             dataTime = oldWorkflowInstance.dataTime ?: LocalDateTime.now(),
         )
         val workflowNodeInstances = workflowInstance.workflowNodeInstances.onEach {
@@ -107,7 +107,8 @@ class WorkflowInstanceService(
             it.taskMaxAttemptCnt = 0
         }
         val jobInstances = workflowNodeInstances.filter { it.parents.isEmpty() }.map { it.createJobInstance() }
-        workflowInstanceRepository.save(workflowInstance)
         jobInstanceRepository.saveAll(jobInstances)
+        val newWorkflowInstanceId = workflowInstanceRepository.save(workflowInstance)
+        return newWorkflowInstanceId.value
     }
 }
