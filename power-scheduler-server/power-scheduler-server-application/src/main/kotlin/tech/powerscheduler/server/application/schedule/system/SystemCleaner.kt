@@ -1,17 +1,12 @@
-package tech.powerscheduler.server.application.actor.singleton
+package tech.powerscheduler.server.application.schedule.system
 
-import akka.actor.typed.Behavior
-import akka.actor.typed.SupervisorStrategy
-import akka.actor.typed.javadsl.AbstractBehavior
-import akka.actor.typed.javadsl.ActorContext
-import akka.actor.typed.javadsl.Behaviors
-import akka.actor.typed.javadsl.Receive
 import org.slf4j.LoggerFactory
-import org.springframework.context.ApplicationContext
+import org.springframework.stereotype.Component
 import org.springframework.transaction.support.TransactionTemplate
 import tech.powerscheduler.common.enums.JobStatusEnum
 import tech.powerscheduler.common.enums.RetentionPolicyEnum
 import tech.powerscheduler.common.enums.WorkflowStatusEnum
+import tech.powerscheduler.server.application.service.WorkerLifeCycleService
 import tech.powerscheduler.server.domain.common.Page
 import tech.powerscheduler.server.domain.common.PageQuery
 import tech.powerscheduler.server.domain.domainevent.DomainEventRepository
@@ -21,20 +16,20 @@ import tech.powerscheduler.server.domain.job.JobInfoRepository
 import tech.powerscheduler.server.domain.job.JobInstanceId
 import tech.powerscheduler.server.domain.job.JobInstanceRepository
 import tech.powerscheduler.server.domain.task.TaskRepository
+import tech.powerscheduler.server.domain.worker.WorkerRegistryRepository
 import tech.powerscheduler.server.domain.workflow.Workflow
 import tech.powerscheduler.server.domain.workflow.WorkflowInstance
 import tech.powerscheduler.server.domain.workflow.WorkflowInstanceRepository
 import tech.powerscheduler.server.domain.workflow.WorkflowRepository
-import java.time.Duration
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
 /**
  * @author grayrat
- * @since 2025/6/4
+ * @since 2025/12/13
  */
-class SystemCleanupActor(
-    context: ActorContext<Command>,
+@Component
+class SystemCleaner(
     private val taskRepository: TaskRepository,
     private val jobInfoRepository: JobInfoRepository,
     private val jobInstanceRepository: JobInstanceRepository,
@@ -42,60 +37,30 @@ class SystemCleanupActor(
     private val domainEventRepository: DomainEventRepository,
     private val workflowInstanceRepository: WorkflowInstanceRepository,
     private val transactionTemplate: TransactionTemplate,
-) : AbstractBehavior<SystemCleanupActor.Command>(context) {
+    private val workerLifeCycleService: WorkerLifeCycleService,
+    private val workerRegistryRepository: WorkerRegistryRepository,
+) {
 
     private val log = LoggerFactory.getLogger(javaClass)
 
-    sealed interface Command {
-        object CleanUp : Command
-    }
-
-    companion object {
-        fun create(applicationContext: ApplicationContext): Behavior<Command> {
-            val jobInfoRepository = applicationContext.getBean(JobInfoRepository::class.java)
-            val jobInstanceRepository = applicationContext.getBean(JobInstanceRepository::class.java)
-            val taskRepository = applicationContext.getBean(TaskRepository::class.java)
-            val domainEventRepository = applicationContext.getBean(DomainEventRepository::class.java)
-            val workflowRepository = applicationContext.getBean(WorkflowRepository::class.java)
-            val workflowInstanceRepository = applicationContext.getBean(WorkflowInstanceRepository::class.java)
-            val transactionTemplate = applicationContext.getBean(TransactionTemplate::class.java)
-            return Behaviors.setup { context ->
-                Behaviors.withTimers { timer ->
-                    val actor = SystemCleanupActor(
-                        context = context,
-                        jobInfoRepository = jobInfoRepository,
-                        jobInstanceRepository = jobInstanceRepository,
-                        taskRepository = taskRepository,
-                        domainEventRepository = domainEventRepository,
-                        workflowRepository = workflowRepository,
-                        workflowInstanceRepository = workflowInstanceRepository,
-                        transactionTemplate = transactionTemplate,
-                    )
-                    timer.startTimerWithFixedDelay(
-                        Command.CleanUp,
-                        Command.CleanUp,
-                        Duration.ofSeconds(300),
-                        Duration.ofHours(12),
-                    )
-                    return@withTimers actor
-                }
-            }.apply {
-                Behaviors.supervise(this).onFailure(SupervisorStrategy.resume())
+    fun handleCleanDueWorkerRegistry() {
+        // 若5s内没有收到心跳，则认为节点已失效，应当被清理掉
+        val expiredAt = LocalDateTime.now().minusSeconds(5)
+        val expiredWorkerRegistries = workerRegistryRepository.findAllExpired(expiredAt)
+        expiredWorkerRegistries.forEach {
+            try {
+                workerLifeCycleService.removeWorkerRegistry(it)
+                log.info("Cleaned due worker registry [{}]", it.address)
+            } catch (e: Exception) {
+                log.warn("Failed to remove worker registry [{}]: {}", it.address, e.message, e)
             }
         }
     }
 
-    override fun createReceive(): Receive<Command> {
-        return newReceiveBuilder()
-            .onMessageEquals(Command.CleanUp, this::handleCleanUp)
-            .build()
-    }
-
-    fun handleCleanUp(): Behavior<Command> {
+    fun cleanUp() {
         cleanUpByJobInfo()
         cleanUpByWorkflow()
         cleanDomainEvent()
-        return this
     }
 
     private fun cleanUpByJobInfo() {

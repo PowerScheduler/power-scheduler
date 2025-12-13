@@ -1,8 +1,8 @@
-package tech.powerscheduler.server.application.event
+package tech.powerscheduler.server.application.schedule.task
 
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
-import tech.powerscheduler.common.enums.ExecuteModeEnum.*
+import tech.powerscheduler.common.enums.ExecuteModeEnum
 import tech.powerscheduler.server.application.service.JobInstanceService
 import tech.powerscheduler.server.application.utils.JSON
 import tech.powerscheduler.server.domain.domainevent.AggregateTypeEnum
@@ -17,7 +17,7 @@ import tech.powerscheduler.server.domain.task.TaskStatusChangeEvent
  * @since 2025/6/8
  */
 @Component
-class TaskStatusChangeEventListener(
+class TaskEventListener(
     private val domainEventRepository: DomainEventRepository,
     private val jobInstanceService: JobInstanceService
 ) {
@@ -25,8 +25,8 @@ class TaskStatusChangeEventListener(
     @EventListener
     fun onTaskStatusChange(event: TaskStatusChangeEvent) {
         when (event.executeMode) {
-            SINGLE -> updateJobInstanceProgressNow(event)
-            BROADCAST, MAP, MAP_REDUCE -> persistentEvent(event)
+            ExecuteModeEnum.SINGLE -> updateJobInstanceProgressNow(event)
+            ExecuteModeEnum.BROADCAST, ExecuteModeEnum.MAP, ExecuteModeEnum.MAP_REDUCE -> persistentEvent(event)
         }
     }
 

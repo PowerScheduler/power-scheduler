@@ -1,4 +1,4 @@
-package tech.powerscheduler.server.application.actor
+package tech.powerscheduler.server.application.schedule.system
 
 import akka.actor.typed.ActorSystem
 import akka.actor.typed.Behavior
@@ -10,7 +10,12 @@ import akka.management.cluster.bootstrap.ClusterBootstrap
 import akka.management.javadsl.AkkaManagement
 import com.typesafe.config.ConfigFactory
 import org.springframework.context.ApplicationContext
-import tech.powerscheduler.server.application.actor.singleton.*
+import tech.powerscheduler.server.application.schedule.job.JobAssignorActor
+import tech.powerscheduler.server.application.schedule.job.JobSchedulerActor
+import tech.powerscheduler.server.application.schedule.task.TaskDispatcherActor
+import tech.powerscheduler.server.application.schedule.task.TaskEventHandlerActor
+import tech.powerscheduler.server.application.schedule.workflow.WorkflowAssignorActor
+import tech.powerscheduler.server.application.schedule.workflow.WorkflowSchedulerActor
 import java.util.concurrent.TimeUnit
 
 class AppGuardian(
@@ -77,17 +82,10 @@ class AppGuardian(
             val singleton = ClusterSingleton.get(actorSystem)
 
             SingletonActor.of(
-                TaskStatusChangeEventHandlerActor.create(applicationContext = applicationContext),
-                TaskStatusChangeEventHandlerActor::class.simpleName,
+                TaskEventHandlerActor.create(applicationContext = applicationContext),
+                TaskEventHandlerActor::class.simpleName,
             )
                 .withProps(Props.empty().withDispatcherFromConfig("task-status-change-event-handler-dispatcher"))
-                .let { singleton.init(it) }
-
-            SingletonActor.of(
-                WorkflowNodeInstanceStatusChangeEventHandlerActor.create(applicationContext = applicationContext),
-                WorkflowNodeInstanceStatusChangeEventHandlerActor::class.simpleName,
-            )
-                .withProps(Props.empty().withDispatcherFromConfig("workflow-node-instance-status-change-event-handler-dispatcher"))
                 .let { singleton.init(it) }
 
             SingletonActor.of(
@@ -126,12 +124,6 @@ class AppGuardian(
                 SchedulerRegisterActor.create(applicationContext),
                 SchedulerRegisterActor::class.simpleName,
                 Props.empty().withDispatcherFromConfig("scheduler-register-dispatcher")
-            )
-
-            context.spawn(
-                WorkerRegistryCleanActor.create(applicationContext),
-                WorkerRegistryCleanActor::class.simpleName,
-                Props.empty().withDispatcherFromConfig("worker-registry-clean-dispatcher")
             )
 
             context.spawn(

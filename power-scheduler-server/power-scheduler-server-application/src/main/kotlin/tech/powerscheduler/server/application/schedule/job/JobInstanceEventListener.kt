@@ -1,4 +1,4 @@
-package tech.powerscheduler.server.application.event
+package tech.powerscheduler.server.application.schedule.job
 
 import org.slf4j.LoggerFactory
 import org.springframework.context.event.EventListener
@@ -15,13 +15,13 @@ import tech.powerscheduler.server.domain.worker.WorkerRemoteService
  * @since 2025/6/9
  */
 @Component
-class JobInstanceTerminatedEventListener(
+class JobInstanceEventListener(
     private val taskRepository: TaskRepository,
     private val jobInstanceRepository: JobInstanceRepository,
     private val workerRemoteService: WorkerRemoteService,
 ) {
 
-    private val log = LoggerFactory.getLogger(JobInstanceTerminatedEventListener::class.java)
+    private val log = LoggerFactory.getLogger(JobInstanceEventListener::class.java)
 
     private val executor = CoroutineExecutor(
         concurrency = 20,

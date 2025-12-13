@@ -1,4 +1,4 @@
-package tech.powerscheduler.server.application.actor
+package tech.powerscheduler.server.application.schedule.workflow
 
 import akka.actor.typed.Behavior
 import akka.actor.typed.PostStop
@@ -9,7 +9,6 @@ import akka.actor.typed.javadsl.Behaviors
 import akka.actor.typed.javadsl.Receive
 import org.springframework.beans.factory.getBean
 import org.springframework.context.ApplicationContext
-import tech.powerscheduler.server.application.scheduler.WorkflowScheduler
 import java.time.Duration
 
 /**
@@ -56,11 +55,11 @@ class WorkflowSchedulerActor(
     override fun createReceive(): Receive<Command> {
         return newReceiveBuilder()
             .onMessageEquals(Command.ScheduleWorkflows) {
-                workflowScheduler.handleScheduleWorkflows()
+                workflowScheduler.scheduleWorkflows()
                 return@onMessageEquals this
             }
             .onMessageEquals(Command.CreateTasks) {
-                workflowScheduler.handleCreateTasks()
+                workflowScheduler.scheduleTasks()
                 return@onMessageEquals this
             }
             .onSignal(PostStop::class.java) {

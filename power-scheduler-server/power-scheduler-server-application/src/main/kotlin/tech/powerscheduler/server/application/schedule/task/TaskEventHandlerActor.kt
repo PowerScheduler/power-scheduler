@@ -1,4 +1,4 @@
-package tech.powerscheduler.server.application.actor.singleton
+package tech.powerscheduler.server.application.schedule.task
 
 import akka.actor.typed.Behavior
 import akka.actor.typed.SupervisorStrategy
@@ -30,14 +30,14 @@ import java.time.Duration
  * @author grayrat
  * @since 2025/6/18
  */
-class TaskStatusChangeEventHandlerActor(
+class TaskEventHandlerActor(
     context: ActorContext<Command>,
     val taskRepository: TaskRepository,
     val domainEventRepository: DomainEventRepository,
     val jobInstanceRepository: JobInstanceRepository,
     val transactionTemplate: TransactionTemplate,
     val jobInstanceService: JobInstanceService,
-) : AbstractBehavior<TaskStatusChangeEventHandlerActor.Command>(context) {
+) : AbstractBehavior<TaskEventHandlerActor.Command>(context) {
 
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -56,7 +56,7 @@ class TaskStatusChangeEventHandlerActor(
             val transactionTemplate = applicationContext.getBean(TransactionTemplate::class.java)
             return Behaviors.setup { context ->
                 Behaviors.withTimers { timer ->
-                    val actor = TaskStatusChangeEventHandlerActor(
+                    val actor = TaskEventHandlerActor(
                         context = context,
                         taskRepository = taskRepository,
                         domainEventRepository = domainEventRepository,

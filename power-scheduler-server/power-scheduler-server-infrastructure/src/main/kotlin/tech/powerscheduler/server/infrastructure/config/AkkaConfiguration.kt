@@ -6,8 +6,8 @@ import org.springframework.context.ApplicationContext
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
-import tech.powerscheduler.server.application.actor.AppGuardian
-import tech.powerscheduler.server.application.actor.ServerAddressHolder
+import tech.powerscheduler.server.application.schedule.system.AppGuardian
+import tech.powerscheduler.server.application.schedule.system.ServerAddressHolder
 import tech.powerscheduler.server.application.utils.JSON
 
 @Profile("!IT")

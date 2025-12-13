@@ -1,7 +1,7 @@
 package tech.powerscheduler.server.infrastructure.config
 
 import org.springframework.boot.context.properties.ConfigurationProperties
-import tech.powerscheduler.server.application.actor.ClusterMode
+import tech.powerscheduler.server.application.schedule.system.ClusterMode
 
 /**
  * @author grayrat

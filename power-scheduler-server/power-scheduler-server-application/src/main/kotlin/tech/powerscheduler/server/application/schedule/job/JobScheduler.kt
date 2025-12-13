@@ -1,106 +1,94 @@
-package tech.powerscheduler.server.application.actor
+package tech.powerscheduler.server.application.schedule.job
 
-import akka.actor.typed.Behavior
-import akka.actor.typed.PostStop
-import akka.actor.typed.SupervisorStrategy
-import akka.actor.typed.javadsl.AbstractBehavior
-import akka.actor.typed.javadsl.ActorContext
-import akka.actor.typed.javadsl.Behaviors
-import akka.actor.typed.javadsl.Receive
-import akka.actor.typed.receptionist.ServiceKey
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
-import org.springframework.context.ApplicationContext
+import org.springframework.stereotype.Component
 import org.springframework.transaction.support.TransactionTemplate
 import tech.powerscheduler.common.enums.JobSourceTypeEnum
 import tech.powerscheduler.common.enums.JobStatusEnum
 import tech.powerscheduler.common.enums.ScheduleTypeEnum
-import tech.powerscheduler.server.application.utils.registerSelfAsService
+import tech.powerscheduler.server.application.schedule.system.ServerAddressHolder
 import tech.powerscheduler.server.domain.appgroup.AppGroupKey
 import tech.powerscheduler.server.domain.common.PageQuery
 import tech.powerscheduler.server.domain.job.JobId
 import tech.powerscheduler.server.domain.job.JobInfoRepository
 import tech.powerscheduler.server.domain.job.JobInstanceRepository
+import tech.powerscheduler.server.domain.scheduler.Scheduler
+import tech.powerscheduler.server.domain.scheduler.SchedulerRepository
 import tech.powerscheduler.server.domain.task.TaskRepository
 import tech.powerscheduler.server.domain.worker.WorkerRegistry
 import tech.powerscheduler.server.domain.worker.WorkerRegistryRepository
-import java.time.Duration
 import java.time.LocalDateTime
 
-class JobSchedulerActor(
-    context: ActorContext<Command>,
+/**
+ * @author grayrat
+ * @since 2025/12/13
+ */
+@Component
+class JobScheduler(
+    private val jobInfoRepository: JobInfoRepository,
+    private val schedulerRepository: SchedulerRepository,
     private val serverAddressHolder: ServerAddressHolder,
     private val taskRepository: TaskRepository,
-    private val jobInfoRepository: JobInfoRepository,
     private val jobInstanceRepository: JobInstanceRepository,
     private val workerRegistryRepository: WorkerRegistryRepository,
     private val transactionTemplate: TransactionTemplate,
-) : AbstractBehavior<JobSchedulerActor.Command>(context) {
+) {
 
     private val log = LoggerFactory.getLogger(javaClass)
 
-    sealed interface Command {
-        object ScheduleJobs : Command
-        object CreateTasks : Command
+    fun assignJobs() {
+        val availableSchedulers = schedulerRepository.findAll().filter { it.expired.not() }
+        if (availableSchedulers.isEmpty()) {
+            log.error("assignWorkflows failed, no available schedulers")
+        }
+        var pageNo = 1
+        do {
+            val query = PageQuery(pageNo = pageNo++, pageSize = 200)
+            val page = jobInfoRepository.listAssignableIds(query)
+            val jobIds = page.content
+            reassignJobs(jobIds, availableSchedulers)
+        } while (page.isNotEmpty())
     }
 
-    companion object {
-        val SERVICE_KEY: ServiceKey<Command> = ServiceKey.create<Command>(
-            Command::class.java,
-            JobSchedulerActor::class.simpleName
-        )
+    fun reassignJobs() {
+        val availableSchedulers = schedulerRepository.findAll().filter { it.expired.not() }
+        if (availableSchedulers.isEmpty()) {
+            log.error("handleReassignAllJob failed, no available schedulers")
+        }
+        var pageNo = 1
+        do {
+            val query = PageQuery(pageNo = pageNo++, pageSize = 1000)
+            val page = jobInfoRepository.listAllIds(query)
+            val jobIds = page.content
+            reassignJobs(jobIds, availableSchedulers)
+        } while (page.isNotEmpty())
+    }
 
-        fun create(
-            applicationContext: ApplicationContext,
-        ): Behavior<Command> {
-            val serverAddressHolder = applicationContext.getBean(ServerAddressHolder::class.java)
-            val taskRepository = applicationContext.getBean(TaskRepository::class.java)
-            val jobInfoRepository = applicationContext.getBean(JobInfoRepository::class.java)
-            val jobInstanceRepository = applicationContext.getBean(JobInstanceRepository::class.java)
-            val workerRegistryRepository = applicationContext.getBean(WorkerRegistryRepository::class.java)
-            val transactionTemplate = applicationContext.getBean(TransactionTemplate::class.java)
-            return Behaviors.setup { context ->
-                return@setup Behaviors.withTimers { timer ->
-                    timer.startTimerWithFixedDelay(
-                        Command.ScheduleJobs,
-                        Duration.ofSeconds(1)
-                    )
-                    timer.startTimerWithFixedDelay(
-                        Command.CreateTasks,
-                        Duration.ofSeconds(1)
-                    )
-                    val jobSchedulerActor = JobSchedulerActor(
-                        context = context,
-                        serverAddressHolder = serverAddressHolder,
-                        taskRepository = taskRepository,
-                        jobInfoRepository = jobInfoRepository,
-                        jobInstanceRepository = jobInstanceRepository,
-                        workerRegistryRepository = workerRegistryRepository,
-                        transactionTemplate = transactionTemplate,
-                    )
-                    jobSchedulerActor.apply {
-                        this.registerSelfAsService(SERVICE_KEY)
-                    }
-                    return@withTimers jobSchedulerActor
+    private fun reassignJobs(jobIds: List<JobId>, availableSchedulers: List<Scheduler>) {
+        if (jobIds.isEmpty()) {
+            return
+        }
+        jobIds.forEach { jobId ->
+            try {
+                transactionTemplate.executeWithoutResult {
+                    val jobInfo = jobInfoRepository.lockById(jobId) ?: return@executeWithoutResult
+                    val schedulerIdx = jobIds.size % availableSchedulers.size
+                    val assignedScheduler = availableSchedulers[schedulerIdx]
+                    jobInfo.schedulerAddress = assignedScheduler.address
+                    jobInfoRepository.save(jobInfo)
+                    log.info("assign job [{}] to server [{}]", jobInfo.id!!.value, jobInfo.schedulerAddress)
                 }
-            }.apply {
-                Behaviors.supervise(this).onFailure(SupervisorStrategy.resume())
+            } catch (e: Exception) {
+                log.error("Failed to reassignJobs job [{}]: {}", jobId.value, e.message, e)
             }
         }
     }
 
-    override fun createReceive(): Receive<Command> {
-        return newReceiveBuilder()
-            .onMessageEquals(Command.ScheduleJobs) { return@onMessageEquals handleScheduleDueJobs() }
-            .onMessageEquals(Command.CreateTasks) { return@onMessageEquals handleCreateTasks() }
-            .onSignal(PostStop::class.java) { signal -> onPostStop() }
-            .build()
-    }
-
-    private fun handleScheduleDueJobs(): Behavior<Command> {
+    fun handleScheduleDueJobs() {
         var pageNo = 1
         val currentServerAddress = serverAddressHolder.address
         do {
@@ -124,7 +112,6 @@ class JobSchedulerActor(
             val jobIds = schedulableList.mapNotNull { it.id }
             scheduleJobs(jobIds, currentServerAddress)
         } while (assignedJobIdPage.isNotEmpty())
-        return this
     }
 
     private fun scheduleJobs(
@@ -174,7 +161,7 @@ class JobSchedulerActor(
             // 检查任务实例并发数量
             val jobId2UnfinishedJobInstanceCount = jobInstanceRepository.countByJobIdAndJobStatus(
                 jobIds = listOf(jobId),
-                jobStatuses = JobStatusEnum.Companion.UNCOMPLETED_STATUSES
+                jobStatuses = JobStatusEnum.UNCOMPLETED_STATUSES
             )
             val maxConcurrentNum = jobInfoToSchedule.maxConcurrentNum!!
             val existUnfinishedJobInstanceCount = jobId2UnfinishedJobInstanceCount[jobInfoToSchedule.id] ?: 0L
@@ -224,7 +211,7 @@ class JobSchedulerActor(
         }
     }
 
-    private fun handleCreateTasks(): Behavior<Command> {
+    fun handleCreateTasks() {
         var pageNo = 1
         val currentServerAddress = serverAddressHolder.address
         do {
@@ -240,7 +227,6 @@ class JobSchedulerActor(
             val jobIds = jobIdPage.content
             createTasks(jobIds)
         } while (jobIdPage.isNotEmpty())
-        return this
     }
 
     private fun createTasks(jobIds: List<JobId>) {
@@ -288,11 +274,10 @@ class JobSchedulerActor(
         } while (jobInstanceIdPage.isNotEmpty())
     }
 
-    private fun onPostStop(): Behavior<Command> {
+    fun onPostStop() {
         log.info("start to reset jobs assigned to this server")
         val currentServerAddress = serverAddressHolder.address
         jobInfoRepository.clearSchedulerByAddress(currentServerAddress)
         log.info("successfully reset jobs assigned to this server")
-        return this
     }
 }

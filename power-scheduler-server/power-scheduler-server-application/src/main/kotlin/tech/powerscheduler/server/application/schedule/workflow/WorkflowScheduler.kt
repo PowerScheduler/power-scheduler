@@ -1,21 +1,23 @@
-package tech.powerscheduler.server.application.scheduler
+package tech.powerscheduler.server.application.schedule.workflow
 
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
-import org.springframework.stereotype.Service
+import org.springframework.stereotype.Component
 import org.springframework.transaction.support.TransactionTemplate
 import tech.powerscheduler.common.enums.JobSourceTypeEnum
 import tech.powerscheduler.common.enums.JobStatusEnum
 import tech.powerscheduler.common.enums.ScheduleTypeEnum
 import tech.powerscheduler.common.enums.WorkflowStatusEnum
-import tech.powerscheduler.server.application.actor.ServerAddressHolder
+import tech.powerscheduler.server.application.schedule.system.ServerAddressHolder
 import tech.powerscheduler.server.application.service.JobInstanceService
 import tech.powerscheduler.server.domain.appgroup.AppGroupKey
 import tech.powerscheduler.server.domain.common.PageQuery
 import tech.powerscheduler.server.domain.job.JobInstanceRepository
+import tech.powerscheduler.server.domain.scheduler.Scheduler
+import tech.powerscheduler.server.domain.scheduler.SchedulerRepository
 import tech.powerscheduler.server.domain.task.TaskRepository
 import tech.powerscheduler.server.domain.worker.WorkerRegistry
 import tech.powerscheduler.server.domain.worker.WorkerRegistryRepository
@@ -29,8 +31,9 @@ import java.time.LocalDateTime
  * @author grayrat
  * @since 2025/12/13
  */
-@Service
+@Component
 class WorkflowScheduler(
+    private val schedulerRepository: SchedulerRepository,
     private val serverAddressHolder: ServerAddressHolder,
     private val jobInstanceRepository: JobInstanceRepository,
     private val workflowRepository: WorkflowRepository,
@@ -44,7 +47,65 @@ class WorkflowScheduler(
 
     private val log = LoggerFactory.getLogger(javaClass)
 
-    fun handleScheduleWorkflows() {
+    fun assignWorkflows() {
+        val availableSchedulers = schedulerRepository.findAll().filter { it.expired.not() }
+        if (availableSchedulers.isEmpty()) {
+            log.error("assignWorkflows failed, no available schedulers")
+        }
+        var pageNo = 1
+        do {
+            val query = PageQuery(pageNo = pageNo++, pageSize = 50)
+            val page = workflowRepository.listAssignableIds(query)
+            val workflowIds = page.content
+            reassign(workflowIds, availableSchedulers)
+        } while (page.isNotEmpty())
+    }
+
+    fun reassignWorkflows() {
+        val availableSchedulers = schedulerRepository.findAll().filter { it.expired.not() }
+        if (availableSchedulers.isEmpty()) {
+            log.error("reassignWorkflows failed, no available schedulers")
+        }
+        var pageNo = 1
+        do {
+            val query = PageQuery(pageNo = pageNo++, pageSize = 100)
+            val page = workflowRepository.listAllIds(query)
+            val workflowIds = page.content
+            reassign(workflowIds, availableSchedulers)
+        } while (page.isNotEmpty())
+    }
+
+    fun reassign(
+        workflowIds: List<WorkflowId>,
+        availableSchedulers: List<Scheduler>
+    ) {
+        if (workflowIds.isEmpty()) {
+            return
+        }
+        workflowIds.forEach { workflowId ->
+            try {
+                transactionTemplate.executeWithoutResult {
+                    val workflow = workflowRepository.lockById(workflowId)
+                    if (workflow == null) {
+                        return@executeWithoutResult
+                    }
+                    val schedulerIdx = workflowIds.size % availableSchedulers.size
+                    val assignedScheduler = availableSchedulers[schedulerIdx]
+                    workflow.schedulerAddress = assignedScheduler.address
+                    workflowRepository.save(workflow)
+                    log.info(
+                        "assign workflow [{}] to server [{}]",
+                        workflow.id!!.value,
+                        workflow.schedulerAddress
+                    )
+                }
+            } catch (e: Exception) {
+                log.error("Failed to reassign workflow [{}]: {}", workflowId.value, e.message, e)
+            }
+        }
+    }
+
+    fun scheduleWorkflows() {
         var pageNo = 1
         val currentServerAddress = serverAddressHolder.address
         do {
@@ -68,11 +129,11 @@ class WorkflowScheduler(
                 continue
             }
             val workflowIds = schedulableList.mapNotNull { it.id }
-            scheduleWorkflows(workflowIds)
+            scheduleWorkflow(workflowIds)
         } while (workflowIdPage.isNotEmpty())
     }
 
-    fun handleCreateTasks() {
+    fun scheduleTasks() {
         var pageNo = 1
         val currentServerAddress = serverAddressHolder.address
         do {
@@ -86,7 +147,7 @@ class WorkflowScheduler(
                 break
             }
             val workflowIds = workflowIdPage.content
-            createTasks(workflowIds)
+            scheduleTasks(workflowIds)
         } while (workflowIdPage.isNotEmpty())
     }
 
@@ -97,7 +158,7 @@ class WorkflowScheduler(
         log.info("successfully reset jobs assigned to this server")
     }
 
-    private fun scheduleWorkflows(
+    private fun scheduleWorkflow(
         workflowIds: List<WorkflowId>,
     ) {
         // 使用管道限制最大并发数量, 为了避免并发大量的请求导致系统资源不足
@@ -107,7 +168,7 @@ class WorkflowScheduler(
                 async {
                     channel.send(Unit)
                     try {
-                        schedulerOne(workflowId = workflowId)
+                        scheduleWorkflow(workflowId = workflowId)
                     } catch (e: Exception) {
                         log.error("schedule job [{}] failed: {}", workflowId.value, e.message, e)
                     } finally {
@@ -119,7 +180,7 @@ class WorkflowScheduler(
         }
     }
 
-    private fun schedulerOne(workflowId: WorkflowId) {
+    private fun scheduleWorkflow(workflowId: WorkflowId) {
         transactionTemplate.executeWithoutResult {
             val workflow = workflowRepository.lockById(workflowId)
             if (workflow == null) {
@@ -167,7 +228,7 @@ class WorkflowScheduler(
         }
     }
 
-    private fun createTasks(workflowIds: List<WorkflowId>) {
+    private fun scheduleTasks(workflowIds: List<WorkflowId>) {
         var pageNo = 1
         do {
             val pageQuery = PageQuery(pageNo = pageNo++, pageSize = 20)

@@ -25,7 +25,7 @@ class CoroutineExecutor(
     fun submit(
         task: () -> Unit
     ) {
-        ExecutorCoroutineScope.async(ExecutorCoroutineScope.coroutineContext) {
+        val async = ExecutorCoroutineScope.async {
             try {
                 channel.send(Unit)
                 task.invoke()

@@ -1,4 +1,4 @@
-package tech.powerscheduler.server.application.actor
+package tech.powerscheduler.server.application.schedule.system
 
 /**
  * @author grayrat
