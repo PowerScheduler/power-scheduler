@@ -19,14 +19,16 @@ import tech.powerscheduler.server.application.service.WorkflowInstanceService
 @Tag(name = "WorkflowInstanceApi")
 @Validated
 @RestController
-@RequestMapping("/api/WorkflowInstances")
+@RequestMapping("/api/workflowInstances")
 class WorkflowInstanceController(
     private val workflowInstanceService: WorkflowInstanceService
 ) : BaseController() {
 
     @Operation(summary = "查询工作流实例列表")
     @GetMapping("/list")
-    fun listWorkflowInstance(@Validated @NotNull param: WorkflowInstanceQueryRequestDTO?) = wrapperResponse {
+    fun listWorkflowInstance(
+        @Validated @NotNull param: WorkflowInstanceQueryRequestDTO?
+    ) = wrapperResponse {
         return@wrapperResponse workflowInstanceService.list(param!!)
     }
 
@@ -52,7 +54,7 @@ class WorkflowInstanceController(
 
     @Operation(summary = "重跑任务")
     @PostMapping("/retry")
-    fun retryWorkflow(@NotNull workflowInstanceId: Long?) = wrapperResponse {
+    fun retryWorkflowInstance(@NotNull workflowInstanceId: Long?) = wrapperResponse {
         return@wrapperResponse workflowInstanceService.retry(workflowInstanceId!!)
     }
 }
