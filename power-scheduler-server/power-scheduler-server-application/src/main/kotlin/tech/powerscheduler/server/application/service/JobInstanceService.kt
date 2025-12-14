@@ -28,6 +28,7 @@ import tech.powerscheduler.server.domain.task.TaskRepository
 import tech.powerscheduler.server.domain.workflow.WorkflowInstanceRepository
 import tech.powerscheduler.server.domain.workflow.WorkflowRepository
 import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 /**
  * 任务实例相关服务
@@ -170,9 +171,6 @@ class JobInstanceService(
             it.nodeInstanceCode == workflowNodeInstanceCode
         }!!
         val newStatus = WorkflowStatusEnum.from(jobInstance.jobStatus!!)
-        if (workflowNodeInstance.status == newStatus) {
-            return
-        }
         workflowNodeInstance.apply {
             this.startAt = jobInstance.startAt
             this.endAt = jobInstance.endAt
@@ -183,7 +181,12 @@ class JobInstanceService(
             this.updateProgress()
             this.graphData!!.mapNotNull { it.data }
                 .find { it.workflowNodeInstanceCode == workflowNodeInstanceCode }
-                ?.also { it.status = workflowNodeInstance.status }
+                ?.also {
+                    val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+                    it.status = workflowNodeInstance.status
+                    it.startAt = workflowNodeInstance.startAt?.format(formatter)
+                    it.endAt = workflowNodeInstance.endAt?.format(formatter)
+                }
         }
         if (workflowInstance.status == WorkflowStatusEnum.RUNNING) {
             val nextWorkflowNodeInstances = workflowInstance.workflowNodeInstances
