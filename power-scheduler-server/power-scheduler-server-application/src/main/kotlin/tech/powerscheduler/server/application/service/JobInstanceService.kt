@@ -83,8 +83,8 @@ class JobInstanceService(
         }
     }
 
-    fun run(param: JobRunRequestDTO): Long {
-        val jobInfo = jobInfoRepository.findById(JobId(param.jobId!!))
+    fun run(jobId: Long, param: JobRunRequestDTO): Long {
+        val jobInfo = jobInfoRepository.findById(JobId(jobId))
             ?: throw BizException(message = "运行任务失败: 任务不存在")
         val jobInstance = jobInfo.createInstance().apply {
             this.dataTime = param.dataTime
@@ -105,16 +105,19 @@ class JobInstanceService(
         return jobInstanceId.value
     }
 
-    fun queryProgress(param: JobProgressQueryRequestDTO): PageDTO<JobProgressQueryResponseDTO> {
-        val jobInstanceId = JobInstanceId(param.jobInstanceId!!)
-        val jobInstance = jobInstanceRepository.findById(jobInstanceId) ?: return PageDTO.empty()
+    fun queryProgress(
+        jobInstanceId: Long,
+        param: JobProgressQueryRequestDTO
+    ): PageDTO<JobProgressQueryResponseDTO> {
+        val jobInstance = jobInstanceRepository.findById(JobInstanceId(jobInstanceId))
+            ?: return PageDTO.empty()
         val batch = jobInstance.batch!!
         val pageQuery = PageQuery().also {
             it.pageNo = param.pageNo
             it.pageSize = param.pageSize
         }
         val page = taskRepository.findAllByJobInstanceIdAndBatchAndTaskType(
-            jobInstanceId = jobInstanceId,
+            jobInstanceId = JobInstanceId(jobInstanceId),
             batch = batch,
             taskTypes = TaskTypeEnum.entries,
             pageQuery = pageQuery

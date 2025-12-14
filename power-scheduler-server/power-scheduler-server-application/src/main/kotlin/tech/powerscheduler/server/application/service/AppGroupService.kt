@@ -45,8 +45,12 @@ class AppGroupService(
         return appGroupSaved.id?.value!!
     }
 
-    fun edit(param: AppGroupEditRequestDTO, userContext: UserContext) {
-        val appGroupId = AppGroupId(param.id!!)
+    fun edit(
+        appGroupId: Long,
+        param: AppGroupEditRequestDTO,
+        userContext: UserContext
+    ) {
+        val appGroupId = AppGroupId(appGroupId)
         val appGroup = appGroupRepository.findById(appGroupId)
             ?: throw BizException(message = "应用保存失败, 应用不存在")
         val appGroupToEdit = appGroupAssembler.toDomainModel4EditRequest(

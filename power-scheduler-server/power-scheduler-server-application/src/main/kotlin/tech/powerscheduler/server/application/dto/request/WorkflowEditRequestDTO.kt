@@ -19,12 +19,6 @@ class WorkflowEditRequestDTO {
     var nodes: List<WorkflowNodeDTO> = emptyList()
 
     /**
-     * 工作流id
-     */
-    @NotNull
-    var workflowId: Long? = null
-
-    /**
      * 工作流名称
      */
     @NotBlank

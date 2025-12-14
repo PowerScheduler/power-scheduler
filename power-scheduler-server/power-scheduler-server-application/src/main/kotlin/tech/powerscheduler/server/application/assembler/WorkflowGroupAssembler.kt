@@ -21,8 +21,8 @@ class WorkflowGroupAssembler {
     fun toDomainQuery(param: WorkflowGroupQueryRequestDTO): WorkflowGroupQuery {
         return WorkflowGroupQuery().apply {
             this.namespaceCode = param.namespaceCode
-            this.code = param.code
-            this.name = param.name
+            this.code = param.workflowGroupCode
+            this.name = param.workflowGroupName
         }
     }
 

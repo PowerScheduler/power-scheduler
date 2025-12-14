@@ -49,8 +49,11 @@ class WorkflowInstanceService(
         return workflowInstance?.let { workflowInstanceAssembler.toWorkflowInstanceDetailResponseDTO(it) }
     }
 
-    fun queryProgress(param: WorkflowNodeInstanceProgressQueryRequestDTO): PageDTO<JobProgressQueryResponseDTO> {
-        val workflowNodeInstanceId = WorkflowNodeInstanceId(param.workflowNodeInstanceId!!)
+    fun queryProgress(
+        workflowInstanceId: Long,
+        param: WorkflowNodeInstanceProgressQueryRequestDTO
+    ): PageDTO<JobProgressQueryResponseDTO> {
+        val workflowNodeInstanceId = WorkflowNodeInstanceId(workflowInstanceId)
         val workflowNodeInstance = workflowNodeInstanceRepository.findById(workflowNodeInstanceId)
             ?: throw BizException("工作流节点不存在")
         val workflowNodeInstanceCode = workflowNodeInstance.nodeInstanceCode.orEmpty()

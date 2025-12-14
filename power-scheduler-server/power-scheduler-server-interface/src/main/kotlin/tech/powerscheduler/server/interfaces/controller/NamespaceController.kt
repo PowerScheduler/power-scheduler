@@ -2,7 +2,6 @@ package tech.powerscheduler.server.interfaces.controller
 
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
-import jakarta.validation.constraints.NotNull
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import tech.powerscheduler.server.application.dto.request.NamespaceAddRequestDTO
@@ -17,26 +16,33 @@ import tech.powerscheduler.server.application.service.NamespaceService
 @Tag(name = "NamespaceApi")
 @Validated
 @RestController
-@RequestMapping("/api/namespace")
+@RequestMapping(NAMESPACE_API)
 class NamespaceController(
     private val namespaceService: NamespaceService,
 ) : BaseController() {
 
     @Operation(summary = "查询命名空间列表")
-    @GetMapping("/list")
-    fun listNamespace(@Validated @NotNull param: NamespaceQueryRequestDTO) = wrapperResponse {
+    @GetMapping("/")
+    fun listNamespace(
+        @Validated param: NamespaceQueryRequestDTO
+    ) = wrapperResponse {
         return@wrapperResponse namespaceService.query(param)
     }
 
-    @Operation(summary = "新增命名空间空间")
-    @PostMapping("/add")
-    fun addNamespace(@Validated @RequestBody param: NamespaceAddRequestDTO) = wrapperResponse {
+    @Operation(summary = "新增命名空间")
+    @PostMapping("/")
+    fun addNamespace(
+        @Validated @RequestBody param: NamespaceAddRequestDTO
+    ) = wrapperResponse {
         return@wrapperResponse namespaceService.add(param)
     }
 
     @Operation(summary = "编辑命名空间")
-    @PostMapping("/edit")
-    fun editNamespace(@Validated @RequestBody param: NamespaceEditRequestDTO) = wrapperResponse {
-        return@wrapperResponse namespaceService.edit(param)
+    @PutMapping("/{namespaceId}")
+    fun editNamespace(
+        @PathVariable namespaceId: Long,
+        @Validated @RequestBody param: NamespaceEditRequestDTO
+    ) = wrapperResponse {
+        return@wrapperResponse namespaceService.edit(namespaceId, param)
     }
 }

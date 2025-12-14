@@ -42,9 +42,13 @@ class WorkflowGroupService(
         return workflowGroupId.value
     }
 
-    fun edit(param: WorkflowGroupEditRequestDTO, userContext: UserContext) {
-        val workflowGroup = workflowGroupRepository.findById(WorkflowGroupId(param.id!!))
-            ?: throw BizException("A workflowGroup with id ${param.id} not found")
+    fun edit(
+        workflowGroupId: Long,
+        param: WorkflowGroupEditRequestDTO,
+        userContext: UserContext
+    ) {
+        val workflowGroup = workflowGroupRepository.findById(WorkflowGroupId(workflowGroupId))
+            ?: throw BizException("A workflowGroup with id $workflowGroupId not found")
         val workflowGroupToSave = workflowGroupAssembler.toDomainModel4EditRequest(
             model = workflowGroup,
             param = param,

@@ -8,12 +8,6 @@ import jakarta.validation.constraints.NotNull
  */
 class WorkflowSwitchRequestDTO {
     /**
-     * 工作流id
-     */
-    @NotNull
-    var workflowId: Long? = null
-
-    /**
      * 开关状态
      */
     @NotNull

@@ -2,7 +2,6 @@ package tech.powerscheduler.server.interfaces.controller
 
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
-import jakarta.validation.constraints.NotNull
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
@@ -17,14 +16,16 @@ import tech.powerscheduler.server.application.service.ToolService
 @Tag(name = "ToolApi")
 @Validated
 @RestController
-@RequestMapping("/api/tool")
+@RequestMapping(TOOL_API)
 class ToolController(
     private val toolService: ToolService,
 ) : BaseController() {
 
     @Operation(summary = "解析CRON表达式")
-    @GetMapping("/parseCron")
-    fun parseCron(@NotNull param: CronParseRequestDTO?) = wrapperResponse {
-        toolService.parseCron(param!!)
+    @GetMapping("/cron/parse")
+    fun parseCron(
+        @Validated param: CronParseRequestDTO
+    ) = wrapperResponse {
+        toolService.parseCron(param)
     }
 }

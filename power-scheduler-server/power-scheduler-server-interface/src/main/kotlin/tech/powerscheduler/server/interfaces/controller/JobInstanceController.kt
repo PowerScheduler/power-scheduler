@@ -17,45 +17,59 @@ import tech.powerscheduler.server.application.service.JobInstanceService
 @Tag(name = "JobInstanceApi")
 @Validated
 @RestController
-@RequestMapping("/api/jobInstances")
+@RequestMapping(JOB_INSTANCE_API)
 internal class JobInstanceController(
     private val jobInstanceService: JobInstanceService
 ) : BaseController() {
 
     @Operation(summary = "查询任务实例列表")
-    @PostMapping("/list")
-    fun listJobInstance(@Validated @RequestBody param: JobInstanceQueryRequestDTO) = wrapperResponse {
+    @GetMapping("/")
+    fun listJobInstance(
+        @Validated param: JobInstanceQueryRequestDTO
+    ) = wrapperResponse {
         val result = jobInstanceService.list(param)
         return@wrapperResponse result
     }
 
     @Operation(summary = "查询任务实例详情")
-    @GetMapping("/detail")
-    fun getJobInstanceDetail(jobInstanceId: Long) = wrapperResponse {
+    @GetMapping("/{jobInstanceId}")
+    fun getJobInstance(
+        @PathVariable jobInstanceId: Long
+    ) = wrapperResponse {
         jobInstanceService.detail(jobInstanceId)
     }
 
     @Operation(summary = "查询任务错误信息")
-    @GetMapping("/getErrorMessage")
-    fun getErrorMessage(jobInstanceId: Long) = wrapperResponse {
+    @GetMapping("/{jobInstanceId}/errorMessage")
+    fun getErrorMessage(
+        @PathVariable @NotNull jobInstanceId: Long
+    ) = wrapperResponse {
         jobInstanceService.getErrorMessage(jobInstanceId)
     }
 
+    @Operation(summary = "查询任务进度")
+    @GetMapping("/{jobInstanceId}/progress")
+    fun queryProgress(
+        @PathVariable @NotNull jobInstanceId: Long,
+        @Validated @NotNull param: JobProgressQueryRequestDTO
+    ) = wrapperResponse {
+        jobInstanceService.queryProgress(jobInstanceId, param)
+    }
+
     @Operation(summary = "终止任务")
-    @PostMapping("/terminate")
-    fun terminateJobInstance(jobInstanceId: Long) = wrapperResponse {
+    @PostMapping("/{jobInstanceId}/terminate")
+    fun terminateJobInstance(
+        @PathVariable jobInstanceId: Long
+    ) = wrapperResponse {
         jobInstanceService.terminate(jobInstanceId)
     }
 
     @Operation(summary = "重跑任务")
-    @PostMapping("retry")
-    fun retryJobInstance(@NotNull jobInstanceId: Long?) = wrapperResponse {
-        jobInstanceService.retry(jobInstanceId!!)
+    @PostMapping("/{jobInstanceId}/retry")
+    fun retryJobInstance(
+        @PathVariable jobInstanceId: Long
+    ) = wrapperResponse {
+        jobInstanceService.retry(jobInstanceId)
     }
 
-    @Operation(summary = "查询任务进度")
-    @PostMapping("/queryProgress")
-    fun queryProgress(@RequestBody @NotNull param: JobProgressQueryRequestDTO) = wrapperResponse {
-        jobInstanceService.queryProgress(param)
-    }
 }

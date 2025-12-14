@@ -1,6 +1,5 @@
 package tech.powerscheduler.server.application.dto.request
 
-import jakarta.validation.constraints.NotNull
 import tech.powerscheduler.common.dto.request.PageQueryRequestDTO
 
 /**
@@ -9,10 +8,4 @@ import tech.powerscheduler.common.dto.request.PageQueryRequestDTO
  * @author grayrat
  * @since 2025/9/15
  */
-class WorkflowNodeInstanceProgressQueryRequestDTO  : PageQueryRequestDTO() {
-    /**
-     * 任务实例ID
-     */
-    @NotNull
-    var workflowNodeInstanceId: Long? = null
-}
+class WorkflowNodeInstanceProgressQueryRequestDTO  : PageQueryRequestDTO()

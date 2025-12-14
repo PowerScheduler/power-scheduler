@@ -18,10 +18,10 @@ class WorkflowGroupQueryRequestDTO {
     /**
      * 工作流分组编码
      */
-    var code: String? = null
+    var workflowGroupCode: String? = null
 
     /**
      * 工作流分组名称
      */
-    var name: String? = null
+    var workflowGroupName: String? = null
 }

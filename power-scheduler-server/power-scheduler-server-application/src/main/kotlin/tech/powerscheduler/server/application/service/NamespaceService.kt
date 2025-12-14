@@ -36,8 +36,8 @@ class NamespaceService(
         return namespaceId.value
     }
 
-    fun edit(param: NamespaceEditRequestDTO) {
-        val namespaceId = NamespaceId(param.id!!)
+    fun edit(namespaceId: Long, param: NamespaceEditRequestDTO) {
+        val namespaceId = NamespaceId(namespaceId)
         val namespace = namespaceRepository.findById(namespaceId)
             ?: throw BizException("命名空间不存在")
         val namespaceToSave = namespaceAssembler.toDomainModel4EditRequestDTO(namespace, param)
