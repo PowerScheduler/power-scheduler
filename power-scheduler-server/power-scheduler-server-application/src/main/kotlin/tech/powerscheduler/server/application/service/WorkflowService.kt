@@ -80,10 +80,9 @@ class WorkflowService(
     }
 
     @Transactional
-    fun edit(param: WorkflowEditRequestDTO) {
+    fun edit(workflowId: Long, param: WorkflowEditRequestDTO) {
         validateDag(param.nodes)
-        val workflowId = WorkflowId(param.workflowId!!)
-        val workflow = workflowRepository.findById(workflowId)
+        val workflow = workflowRepository.findById(WorkflowId(workflowId))
             ?: throw BizException("Workflow not found")
         val workflowToSave = workflowAssembler.toDomainModel4EditRequest(workflow = workflow, param = param).apply {
             this.validConfig()
@@ -101,9 +100,8 @@ class WorkflowService(
     }
 
     @Transactional
-    fun switch(param: WorkflowSwitchRequestDTO) {
-        val workflowId = WorkflowId(param.workflowId!!)
-        val workflow = workflowRepository.findById(workflowId)
+    fun switch(workflowId: Long, param: WorkflowSwitchRequestDTO) {
+        val workflow = workflowRepository.findById(WorkflowId(workflowId))
             ?: throw BizException("Workflow not found")
         if (workflow.enabled == param.enabled) {
             return
@@ -135,9 +133,8 @@ class WorkflowService(
     }
 
     @Transactional
-    fun run(param: WorkflowRunRequestDTO): Long {
-        val workflowId = WorkflowId(param.workflowId!!)
-        val workflow = workflowRepository.findById(workflowId)
+    fun run(workflowId: Long, param: WorkflowRunRequestDTO): Long {
+        val workflow = workflowRepository.findById(WorkflowId(workflowId))
             ?: throw BizException("Workflow not found")
         val workflowInstance = workflow.createInstance(
             scheduleAt = LocalDateTime.now(),

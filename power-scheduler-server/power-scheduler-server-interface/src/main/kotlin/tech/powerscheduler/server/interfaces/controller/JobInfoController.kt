@@ -15,30 +15,36 @@ import tech.powerscheduler.server.application.service.JobInstanceService
  * @author grayrat
  * @since 2025/4/16
  */
-@Tag(name = "JobInfoApi")
+@Tag(name = "JobApi")
 @Validated
 @RestController
-@RequestMapping("/api/jobInfos")
+@RequestMapping(JOB_API)
 internal class JobInfoController(
     private val jobInfoService: JobInfoService,
     private val jobInstanceService: JobInstanceService,
 ) : BaseController() {
 
     @Operation(summary = "查询任务列表")
-    @PostMapping("/list")
-    fun listJobInfo(@Validated @RequestBody @NotNull param: JobInfoQueryRequestDTO) = wrapperResponse {
+    @GetMapping("/")
+    fun listJob(
+        @Validated @NotNull param: JobInfoQueryRequestDTO
+    ) = wrapperResponse {
         return@wrapperResponse jobInfoService.query(param)
     }
 
     @Operation(summary = "查询任务详情")
-    @GetMapping("/detail")
-    fun getJobInfo(@Validated @NotNull jobId: Long?) = wrapperResponse {
-        return@wrapperResponse jobInfoService.detail(jobId!!)
+    @GetMapping("/{jobId}")
+    fun getJob(
+        @PathVariable jobId: Long
+    ) = wrapperResponse {
+        return@wrapperResponse jobInfoService.detail(jobId)
     }
 
     @Operation(summary = "新增任务")
-    @PostMapping("/add")
-    fun addJobInfo(@Validated @RequestBody param: JobInfoAddRequestDTO) = wrapperResponse {
+    @PostMapping("/")
+    fun addJob(
+        @Validated @RequestBody param: JobInfoAddRequestDTO
+    ) = wrapperResponse {
         if (param.jobType != JobTypeEnum.SCRIPT && param.processor.isNullOrBlank()) {
             throw BizException("任务处理器不能为空")
         }
@@ -46,29 +52,37 @@ internal class JobInfoController(
     }
 
     @Operation(summary = "编辑任务")
-    @PostMapping("/edit")
-    fun editJobInfo(@Validated @RequestBody param: JobInfoEditRequestDTO) = wrapperResponse {
-        if (param.jobType != JobTypeEnum.SCRIPT && param.processor.isNullOrBlank()) {
-            throw BizException("任务处理器不能为空")
-        }
-        return@wrapperResponse jobInfoService.edit(param)
+    @PutMapping("/{jobId}")
+    fun editJob(
+        @PathVariable @NotNull jobId: Long,
+        @Validated @RequestBody param: JobInfoEditRequestDTO
+    ) = wrapperResponse {
+        return@wrapperResponse jobInfoService.edit(jobId, param)
     }
 
     @Operation(summary = "修改任务启用状态")
-    @PostMapping("/switch")
-    fun switchEnable(@Validated @RequestBody param: JobSwitchRequestDTO) = wrapperResponse {
-        return@wrapperResponse jobInfoService.switch(param)
+    @PatchMapping("/{jobId}/status")
+    fun switchJobStatus(
+        @PathVariable @NotNull jobId: Long,
+        @Validated @RequestBody param: JobSwitchRequestDTO
+    ) = wrapperResponse {
+        return@wrapperResponse jobInfoService.switch(jobId, param)
     }
 
     @Operation(summary = "删除任务")
-    @PostMapping("/remove")
-    fun removeJobInfo(@NotNull jobId: Long?) = wrapperResponse {
-        return@wrapperResponse jobInfoService.remove(jobId!!)
+    @DeleteMapping("/{jobId}")
+    fun removeJob(
+        @PathVariable @NotNull jobId: Long
+    ) = wrapperResponse {
+        return@wrapperResponse jobInfoService.remove(jobId)
     }
 
     @Operation(summary = "运行任务")
-    @PostMapping("/run")
-    fun run(@Validated @RequestBody param: JobRunRequestDTO) = wrapperResponse {
-        return@wrapperResponse jobInstanceService.run(param)
+    @PostMapping("/{jobId}/instance")
+    fun runJob(
+        @PathVariable @NotNull jobId: Long,
+        @RequestBody @Validated @NotNull param: JobRunRequestDTO
+    ) = wrapperResponse {
+        return@wrapperResponse jobInstanceService.run(jobId, param)
     }
 }

@@ -6,7 +6,7 @@ package tech.powerscheduler.common.api
  * @author grayrat
  * @since 2025/5/14
  */
-const val SERVER_API_PREFIX = "internal-api/v1/worker"
+const val SERVER_API_PREFIX = "/internal-api/v1/worker"
 
 /**
  * server端健康检查API

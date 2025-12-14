@@ -167,6 +167,9 @@ class JobInfo : Schedulable() {
     }
 
     private fun validateExecuteConfig() {
+        if (this.jobType != JobTypeEnum.SCRIPT && this.processor.isNullOrBlank()) {
+            throw BizException("任务处理器不能为空")
+        }
         if (this.jobType == JobTypeEnum.SCRIPT && this.executeMode in arrayOf(MAP, MAP_REDUCE)) {
             throw BizException("脚本任务不能使用[$executeMode]模式")
         }

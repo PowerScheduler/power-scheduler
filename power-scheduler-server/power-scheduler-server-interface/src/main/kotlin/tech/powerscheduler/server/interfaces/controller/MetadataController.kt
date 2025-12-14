@@ -16,14 +16,14 @@ import tech.powerscheduler.server.application.service.MetadataService
 @Tag(name = "MetadataApi")
 @Validated
 @RestController
-@RequestMapping("/api/metadata")
+@RequestMapping(METADATA_API)
 internal class MetadataController(
     private val metadataService: MetadataService
 ) : BaseController() {
 
     @Operation(summary = "查询元数据")
     @GetMapping("/{metadataCodes}")
-    fun listMetadata(@PathVariable("metadataCodes") vararg metadataCodes: String) = wrapperResponse {
+    fun listMetadata(@PathVariable vararg metadataCodes: String) = wrapperResponse {
         return@wrapperResponse metadataService.listMetadata(metadataCodes.toList())
     }
 

@@ -12,12 +12,6 @@ import tech.powerscheduler.common.enums.*
  */
 class JobInfoEditRequestDTO {
     /**
-     * 任务id
-     */
-    @NotNull
-    var jobId: Long? = null
-
-    /**
      * 任务名称
      */
     @NotBlank

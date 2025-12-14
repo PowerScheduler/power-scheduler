@@ -1,6 +1,5 @@
 package tech.powerscheduler.server.application.dto.request
 
-import jakarta.validation.constraints.NotNull
 import java.time.LocalDateTime
 
 /**
@@ -10,12 +9,6 @@ import java.time.LocalDateTime
  * @since 2025/4/16
  */
 class JobRunRequestDTO {
-    /**
-     * 任务id
-     */
-    @NotNull
-    var jobId: Long? = null
-
     /**
      * Worker地址（ip:host）
      */

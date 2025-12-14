@@ -1,7 +1,6 @@
 package tech.powerscheduler.server.interfaces.controller
 
 import io.swagger.v3.oas.annotations.tags.Tag
-import jakarta.validation.constraints.NotNull
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
@@ -16,13 +15,15 @@ import tech.powerscheduler.server.application.service.WorkerLifeCycleService
 @Tag(name = "WorkerApi")
 @Validated
 @RestController
-@RequestMapping("/api/worker")
+@RequestMapping(WORKER_API)
 class WorkerController(
     private val workerLifeCycleService: WorkerLifeCycleService,
 ) : BaseController() {
 
-    @GetMapping("/list")
-    fun listWorker(@Validated @NotNull param: WorkerQueryRequestDTO?) = wrapperResponse {
-        return@wrapperResponse workerLifeCycleService.list(param!!)
+    @GetMapping("/")
+    fun listWorker(
+        @Validated param: WorkerQueryRequestDTO
+    ) = wrapperResponse {
+        return@wrapperResponse workerLifeCycleService.list(param)
     }
 }

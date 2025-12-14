@@ -21,13 +21,17 @@ class DashboardService(
     private val workerRegistryRepository: WorkerRegistryRepository,
 ) {
 
-    fun queryBasicInfo(param: DashboardBasicInfoQueryRequestDTO): DashboardBasicInfoQueryResponseDTO {
-        val appCode = param.appCode.orEmpty()
-        val namespaceCode = param.namespaceCode!!
-        val onlineWorkerCount = workerRegistryRepository.countByNamespaceCodeAndAppCode(namespaceCode, appCode)
+    fun queryBasicInfo(
+        namespaceCode: String,
+        param: DashboardBasicInfoQueryRequestDTO,
+    ): DashboardBasicInfoQueryResponseDTO {
+        val onlineWorkerCount = workerRegistryRepository.countByNamespaceCodeAndAppCode(
+            namespaceCode = namespaceCode,
+            appCode = param.appCode.orEmpty(),
+        )
         val enabled2JobInfoCount = jobInfoRepository.countGroupedByEnabledWithAppCode(
             namespaceCode = namespaceCode,
-            appCode = appCode,
+            appCode = param.appCode.orEmpty(),
         )
         return DashboardBasicInfoQueryResponseDTO(
             onlineWorkerCount = onlineWorkerCount,
@@ -36,12 +40,13 @@ class DashboardService(
         )
     }
 
-    fun queryStatisticsInfo(param: DashboardStatisticsInfoQueryRequestDTO): DashboardStatisticsInfoQueryResponseDTO {
-        val appCode = param.appCode.orEmpty()
-        val namespaceCode = param.namespaceCode!!
+    fun queryStatisticsInfo(
+        namespaceCode: String,
+        param: DashboardStatisticsInfoQueryRequestDTO
+    ): DashboardStatisticsInfoQueryResponseDTO {
         val jobStatus2JobInstanceCount = jobInstanceRepository.countGroupedByJobStatusWithAppCode(
             namespaceCode = namespaceCode,
-            appCode = appCode,
+            appCode = param.appCode.orEmpty(),
             scheduleAtRange = param.scheduleAtRange!!
         )
         return DashboardStatisticsInfoQueryResponseDTO(

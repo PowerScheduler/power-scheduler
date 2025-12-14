@@ -10,12 +10,6 @@ import jakarta.validation.constraints.NotNull
  */
 class JobSwitchRequestDTO {
     /**
-     * 任务id
-     */
-    @NotNull
-    var jobId: Long? = null
-
-    /**
      * 开关状态
      */
     @NotNull

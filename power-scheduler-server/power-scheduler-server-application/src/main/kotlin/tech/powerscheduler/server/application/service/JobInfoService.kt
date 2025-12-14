@@ -57,8 +57,8 @@ class JobInfoService(
     }
 
     @Transactional
-    fun edit(param: JobInfoEditRequestDTO) {
-        val jobId = JobId(param.jobId!!)
+    fun edit(jobId: Long, param: JobInfoEditRequestDTO) {
+        val jobId = JobId(jobId)
         val jobInfo = jobInfoRepository.lockById(jobId)
             ?: throw BizException(message = "任务保存失败: 任务不存在")
         val jobInfoToSave = jobInfoAssembler.toDomainModel4EditRequest(jobInfo, param).apply {
@@ -68,8 +68,8 @@ class JobInfoService(
     }
 
     @Transactional
-    fun switch(param: JobSwitchRequestDTO) {
-        val jobId = JobId(param.jobId!!)
+    fun switch(jobId: Long, param: JobSwitchRequestDTO) {
+        val jobId = JobId(jobId)
         val jobInfo = jobInfoRepository.lockById(jobId)
             ?: throw BizException("任务保存失败: 任务不存在")
         if (jobInfo.enabled == param.enabled) {
