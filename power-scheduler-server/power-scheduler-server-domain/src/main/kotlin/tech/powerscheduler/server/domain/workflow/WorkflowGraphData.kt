@@ -123,6 +123,8 @@ class WorkflowInstanceGraphDataBody : BaseDataBody() {
     var workflowInstanceCode: String? = null
     var workflowNodeInstanceCode: String? = null
     var status: WorkflowStatusEnum? = null
+    var startAt: String? = null
+    var endAt: String? = null
 
     companion object {
         fun from(workflowGraphDataBody: WorkflowGraphDataBody): WorkflowInstanceGraphDataBody {
@@ -170,7 +172,7 @@ class WorkflowInstanceGraphDataItem : BaseGraphDataItem<WorkflowInstanceGraphDat
     }
 }
 
-class WorkflowInstanceGraphData() : ArrayList<WorkflowInstanceGraphDataItem>() {
+class WorkflowInstanceGraphData : ArrayList<WorkflowInstanceGraphDataItem>() {
     companion object {
         fun from(workflowGraphData: WorkflowGraphData): WorkflowInstanceGraphData {
             val workflowInstanceGraphData = WorkflowInstanceGraphData()
